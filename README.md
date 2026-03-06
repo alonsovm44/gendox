@@ -23,7 +23,7 @@ Run `docgen track <path>` this adds the file/directory to your Docfile.
 Then run `docgen update` to generate your tracked files documentation. Once generated only files with changes will be updated. 
 You can also run `docgen ignore` to indicate to Docgen which files or directories to ignore.
 
-**Example file**
+**Example Docfile**
 ```Docfile
 Track:
 # This is a comment
@@ -31,6 +31,12 @@ Track:
     src/
 Ignore:
     src/secret.cpp
+
+Style:
+    # these get passed to the AI as parameters when making docs
+    -dont use emojis
+    -be professional
+    -be concise
 ```
 
 ## Quick Install

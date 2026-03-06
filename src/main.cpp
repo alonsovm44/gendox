@@ -37,6 +37,8 @@ int main(int argc, char* argv[]) {
         cmd_update(verbose);
     } else if (command == "reboot") {
         cmd_reboot();
+    } else if (command == "sponsor") {
+        cmd_sponsor();
     } else if (command == "get-key") {
         // Simple placeholder for opening browser
 #ifdef _WIN32

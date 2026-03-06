@@ -16,7 +16,7 @@ inline void cmd_init() {
 
     // Create Docfile
     std::ofstream docfile(DOCFILE);
-    docfile << "Track:\n    # Example: *.cpp\n\nIgnore:\n    # Example: secret.cpp\n";
+    docfile << "Track:\n    # Example: *.cpp\n\nIgnore:\n    # Example: secret.cpp\n\nStyle:\n    # Example: no emojis\n    # Example: be concise\n";
     docfile.close();
 
     // Create .docgen directory
@@ -98,6 +98,7 @@ inline void cmd_config(int argc, char* argv[]) {
         config["cloud"]["protocol"] = value;
         std::ofstream o(CONFIG_FILE);
         o << config.dump(4);
+
         std::cout << "Config updated: cloud.protocol = " << value << std::endl;
     } else {
         std::cerr << "Error: Unknown key '" << key << "'." << std::endl;
@@ -142,7 +143,7 @@ inline void cmd_track_ignore(const std::string& cmd, const std::string& path) {
     std::cout << "Added " << path << " to " << cmd << " list." << std::endl;
 }
 
-inline bool call_ai(const std::string& filepath, const std::string& content, IncludeCache& cache, bool verbose = false) {
+inline bool call_ai(const std::string& filepath, const std::string& content, IncludeCache& cache, const std::vector<std::string>& styles, bool verbose = false) {
     if (!fs::exists(CONFIG_FILE)) {
         std::cerr << "Error: Config missing." << std::endl;
         return false;
@@ -180,7 +181,15 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
         }
     }
 
-    std::string prompt = context_section + "Generate Markdown documentation for the following code:\n" + content;
+    std::string style_prompt;
+    if (!styles.empty()) {
+        style_prompt = "\n\nDocumentation Style Guidelines:\n";
+        for (const auto& style : styles) {
+            style_prompt += "- " + style + "\n";
+        }
+    }
+
+    std::string prompt = context_section + "Generate Markdown documentation for the following code:\n" + content + style_prompt;
     std::string doc_text;
 
     int max_retries = 5;
@@ -314,6 +323,7 @@ inline void cmd_update(bool verbose = false) {
 
     std::vector<std::string> tracks;
     std::vector<std::string> ignores;
+    std::vector<std::string> styles;
     std::string current_section;
 
     std::ifstream f(DOCFILE);
@@ -337,6 +347,10 @@ inline void cmd_update(bool verbose = false) {
             current_section = "ignore";
             continue;
         }
+        if (line == "Style:") {
+            current_section = "style";
+            continue;
+        }
 
         // Handle "pattern =" syntax if present, though example shows just pattern
         size_t eq_pos = line.find('=');
@@ -344,6 +358,7 @@ inline void cmd_update(bool verbose = false) {
 
         if (current_section == "track") tracks.push_back(pattern);
         if (current_section == "ignore") ignores.push_back(pattern);
+        if (current_section == "style") styles.push_back(pattern);
     }
 
     // Collect files
@@ -429,7 +444,7 @@ inline void cmd_update(bool verbose = false) {
         std::cout << "[" << (i + 1) << "/" << total_tasks << "] Updating: " << task.path_str << eta_msg << std::endl;
         
         std::string content = read_file(task.path);
-        if (call_ai(task.path_str, content, cache, verbose)) {
+        if (call_ai(task.path_str, content, cache, styles, verbose)) {
             lock_map[task.path_str] = task.hash;
         }
     }
@@ -450,4 +465,15 @@ inline void cmd_reboot() {
     } else {
         std::cout << "Cancelled." << std::endl;
     }
+}
+
+inline void cmd_sponsor() {
+    std::cout << "Opening GitHub Sponsors page..." << std::endl;
+#ifdef _WIN32
+    system("start https://github.com/sponsors/alonsovm44");
+#elif __APPLE__
+    system("open https://github.com/sponsors/alonsovm44");
+#else
+    system("xdg-open https://github.com/sponsors/alonsovm44");
+#endif
 }

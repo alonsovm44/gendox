@@ -6,10 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 Added:
 
+- added style section to Docfile
 - added installers with support for ollama
 - added devcontainer support
 - added RAG
 Removed:
 
 Improved/Fixed:
+- fixed model key not working
 - fixed installer for windows hanging on ollama
