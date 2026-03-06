@@ -1,5 +1,7 @@
 #include "core.hpp"
 
+const std::string VERSION = "0.0.1";
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cout << "Usage: docgen <command> [args...]" << std::endl;
@@ -8,7 +10,10 @@ int main(int argc, char* argv[]) {
 
     std::string command = argv[1];
 
-    if (command == "init") {
+    if (command == "version" || command == "-version" || command == "--version") {
+        std::cout << "docgen version " << VERSION << std::endl;
+        return 0;
+    } else if (command == "init") {
         cmd_init();
     } else if (command == "config") {
         cmd_config(argc, argv);
