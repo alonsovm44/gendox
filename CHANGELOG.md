@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 Added:
 
+- added summary command
 - added style section to Docfile
 - added installers with support for ollama
 - added devcontainer support
@@ -13,5 +14,6 @@ Added:
 Removed:
 
 Improved/Fixed:
+- fixed Ai rewriting the whole document on update, now it works based on the old file
 - fixed model key not working
 - fixed installer for windows hanging on ollama

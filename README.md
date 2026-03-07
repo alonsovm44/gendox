@@ -1,10 +1,11 @@
 # Docgen 
-**Solve documentation drift for good.**
+
+**Solve documentation hell for good.**
 
 Docgen is a lightweight, C++ CLI tool that automates software documentation using Large Language Models (LLMs). It treats documentation generation as a build step, tracking your source code and incrementally updating documentation only when files change.
 
 ## Why this solves "Documentation Hell"
-The biggest pain point in documentation is Staleness. Because Docgen uses a lockfile (docgen.lock) and hashes, you can bake docgen update into your Git hooks or CI/CD. The documentation stays in sync with the code without the developer having to manually rewrite Markdown files every time a function signature changes.
+
 
 ## Features
 

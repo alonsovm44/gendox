@@ -5,6 +5,7 @@ Track:
     src/
     installer.ps1
     installer.sh
+    CHANGELOG.md
 Ignore:
     # Example: secret.cpp
     src/json.hpp

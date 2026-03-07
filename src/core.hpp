@@ -5,6 +5,7 @@
 #include <thread>
 #include <chrono>
 #include <map>
+#include <ctime>
 
 using IncludeCache = std::map<std::string, std::string>;
 
@@ -13,6 +14,11 @@ inline void cmd_init() {
         std::cerr << "Error: .docgen/ or Docfile already exists." << std::endl;
         return;
     }
+
+    std::string project_name;
+    std::cout << "Enter project name: ";
+    std::getline(std::cin, project_name);
+    project_name = trim(project_name);
 
     // Create Docfile
     std::ofstream docfile(DOCFILE);
@@ -45,6 +51,14 @@ inline void cmd_init() {
     std::ofstream lock_file(LOCK_FILE);
     lock_file << "{}";
     lock_file.close();
+
+    // Create tree.json
+    json tree_data;
+    tree_data["project_name"] = project_name;
+    tree_data["files"] = json::array();
+    std::ofstream tree_file(DOCGEN_DIR + "/tree.json");
+    tree_file << tree_data.dump(4);
+    tree_file.close();
 
     std::cout << "Documentation repository initiated in " << fs::current_path().string() << std::endl;
 }
@@ -220,7 +234,7 @@ inline void cmd_track_ignore(const std::string& cmd, const std::string& path) {
     std::cout << "Added " << path << " to " << cmd << " list." << std::endl;
 }
 
-inline bool call_ai(const std::string& filepath, const std::string& content, IncludeCache& cache, const std::vector<std::string>& styles, bool verbose = false) {
+inline bool call_ai(const std::string& filepath, const std::string& content, IncludeCache& cache, const std::vector<std::string>& styles, std::string& out_doc, bool verbose = false) {
     if (!fs::exists(CONFIG_FILE)) {
         std::cerr << "Error: Config missing." << std::endl;
         return false;
@@ -281,10 +295,25 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
         }
     }
 
-    std::string prompt = context_section + 
-        "Generate comprehensive Markdown documentation for the following code.\n"
-        "Focus on the purpose, usage, and behavior. Avoid stating the obvious.\n"
-        "Code:\n" + content + style_prompt;
+    fs::path dest_path = fs::path(DOCS_DIR) / (filepath + ".md");
+    std::string existing_doc;
+    if (fs::exists(dest_path)) {
+        existing_doc = read_file(dest_path);
+    }
+
+    std::string prompt;
+    if (existing_doc.empty()) {
+        prompt = context_section + 
+            "Generate comprehensive Markdown documentation for the following code.\n"
+            "Focus on the purpose, usage, and behavior. Avoid stating the obvious.\n"
+            "Code:\n" + content + style_prompt;
+    } else {
+        prompt = context_section + 
+            "Update the following documentation based on the new code.\n"
+            "Only modify what has changed in the code. Preserve the existing structure and content where possible.\n"
+            "Existing Documentation:\n" + existing_doc + "\n\n"
+            "New Code:\n" + content + style_prompt;
+    }
     std::string doc_text;
 
     int max_retries = 5;
@@ -387,8 +416,8 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
         }
 
         if (success) {
-            fs::path dest_path = fs::path(DOCS_DIR) / (filepath + ".md");
             write_file(dest_path, doc_text);
+            out_doc = doc_text;
             std::cout << "Generated: " << dest_path.string() << std::endl;
             return true;
         }
@@ -420,6 +449,23 @@ inline void cmd_update(bool verbose = false) {
         if (f.peek() != std::ifstream::traits_type::eof()) {
             f >> lock_map;
         }
+    }
+
+    // Load tree.json
+    json tree_data;
+    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    if (fs::exists(tree_path)) {
+        std::ifstream f(tree_path);
+        if (f.peek() != std::ifstream::traits_type::eof()) {
+            f >> tree_data;
+        }
+    }
+    if (!tree_data.contains("files") || !tree_data["files"].is_array()) {
+        tree_data["files"] = json::array();
+    }
+    if (!tree_data.contains("project_name") && tree_data.contains("project")) {
+        tree_data["project_name"] = tree_data["project"];
+        tree_data.erase("project");
     }
 
     std::vector<std::string> tracks;
@@ -528,6 +574,7 @@ inline void cmd_update(bool verbose = false) {
     size_t total_tasks = tasks.size();
 
     IncludeCache cache;
+    bool tree_updated = false;
     for (size_t i = 0; i < total_tasks; ++i) {
         const auto& task = tasks[i];
         
@@ -545,14 +592,474 @@ inline void cmd_update(bool verbose = false) {
         std::cout << "[" << (i + 1) << "/" << total_tasks << "] Updating: " << task.path_str << eta_msg << std::endl;
         
         std::string content = read_file(task.path);
-        if (call_ai(task.path_str, content, cache, styles, verbose)) {
+        std::string doc_content;
+        if (call_ai(task.path_str, content, cache, styles, doc_content, verbose)) {
             lock_map[task.path_str] = task.hash;
+
+            // Update tree.json entry
+            std::vector<std::string> deps = extract_includes(content);
+            
+            std::string summary;
+            std::stringstream ss(doc_content);
+            std::string line;
+            while(std::getline(ss, line)) {
+                line = trim(line);
+                if(line.empty()) continue;
+                if(line[0] == '#') continue;
+                summary = line;
+                break;
+            }
+            if (summary.empty()) summary = "No summary available.";
+
+            std::string doc_path_str = (fs::path(DOCS_DIR) / (task.path_str + ".md")).string();
+            std::replace(doc_path_str.begin(), doc_path_str.end(), '\\', '/');
+
+            json file_entry = {
+                {"path", task.path_str},
+                {"doc_path", doc_path_str},
+                {"hash", task.hash},
+                {"dependencies", deps},
+                {"summary", summary}
+            };
+
+            bool found = false;
+            for (auto& item : tree_data["files"]) {
+                if (item["path"] == task.path_str) {
+                    item = file_entry;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                tree_data["files"].push_back(file_entry);
+            }
+            tree_updated = true;
         }
     }
 
     std::ofstream out(LOCK_FILE);
     out << lock_map.dump(4);
+
+    if (tree_updated) {
+        auto now = std::chrono::system_clock::now();
+        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        char buf[30];
+        std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&now_c));
+        tree_data["last_update"] = buf;
+
+        std::ofstream tree_out(tree_path);
+        tree_out << tree_data.dump(4);
+    }
+
     std::cout << "Update complete." << std::endl;
+}
+
+inline void cmd_summary() {
+    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    if (!fs::exists(tree_path)) {
+        std::cerr << "Error: tree.json not found. Run 'docgen update' first." << std::endl;
+        return;
+    }
+
+    std::ifstream f(tree_path);
+    json tree_data;
+    try {
+        f >> tree_data;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: Failed to parse tree.json: " << e.what() << std::endl;
+        return;
+    }
+
+    std::string project_name = tree_data.value("project_name", "Project");
+    std::stringstream ss;
+    ss << "# " << project_name << " Documentation Summary\n\n";
+    
+    if (tree_data.contains("last_update")) {
+        ss << "Last updated: " << tree_data["last_update"].get<std::string>() << "\n\n";
+    }
+
+    if (tree_data.contains("files") && tree_data["files"].is_array()) {
+        std::vector<json> files;
+        for (const auto& item : tree_data["files"]) {
+            files.push_back(item);
+        }
+        
+        std::sort(files.begin(), files.end(), [](const json& a, const json& b) {
+            return a.value("path", "") < b.value("path", "");
+        });
+
+        for (const auto& file : files) {
+            std::string path = file.value("path", "unknown");
+            std::string summary = file.value("summary", "No summary available.");
+            std::string doc_path = file.value("doc_path", "");
+            
+            ss << "## " << path << "\n\n";
+            ss << summary << "\n\n";
+            if (!doc_path.empty()) {
+                std::replace(doc_path.begin(), doc_path.end(), '\\', '/');
+                ss << "[View full documentation](" << doc_path << ")\n\n";
+            }
+            ss << "---\n\n";
+        }
+    }
+
+    std::string output_file = "SUMMARY.md";
+    std::ofstream out(output_file);
+    out << ss.str();
+    out.close();
+
+    std::cout << "Summary generated: " << output_file << std::endl;
+}
+
+inline void cmd_status() {
+    if (!fs::exists(DOCFILE)) {
+        std::cerr << "Error: Docfile not found. Run 'docgen init'." << std::endl;
+        return;
+    }
+
+    json lock_map;
+    if (fs::exists(LOCK_FILE)) {
+        std::ifstream f(LOCK_FILE);
+        if (f.peek() != std::ifstream::traits_type::eof()) {
+            f >> lock_map;
+        }
+    }
+
+    std::vector<std::string> tracks;
+    std::vector<std::string> ignores;
+    std::string current_section;
+
+    std::ifstream f(DOCFILE);
+    std::string line;
+    while (std::getline(f, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#') continue;
+
+        size_t comment_pos = line.find('%');
+        if (comment_pos != std::string::npos) {
+            line = trim(line.substr(0, comment_pos));
+        }
+        if (line.empty()) continue;
+
+        if (line == "Track:") {
+            current_section = "track";
+            continue;
+        }
+        if (line == "Ignore:") {
+            current_section = "ignore";
+            continue;
+        }
+        if (line == "Style:") {
+            current_section = "style";
+            continue;
+        }
+
+        size_t eq_pos = line.find('=');
+        std::string pattern = (eq_pos != std::string::npos) ? trim(line.substr(0, eq_pos)) : line;
+
+        if (current_section == "track") tracks.push_back(pattern);
+        if (current_section == "ignore") ignores.push_back(pattern);
+    }
+
+    std::cout << "Project Status:\n" << std::endl;
+    bool changes = false;
+
+    for (const auto& entry : fs::recursive_directory_iterator(".")) {
+        if (entry.is_regular_file()) {
+            fs::path p = entry.path().lexically_relative(".");
+            std::string p_str = p.string();
+            
+            if (p_str.find(".docgen") == 0) continue;
+
+            bool tracked = false;
+            for (const auto& t : tracks) {
+                if (match_pattern(p, t)) {
+                    tracked = true;
+                    break;
+                }
+            }
+            if (!tracked) continue;
+
+            bool ignored = false;
+            for (const auto& i : ignores) {
+                if (match_pattern(p, i)) {
+                    ignored = true;
+                    break;
+                }
+            }
+            if (ignored) continue;
+
+            if (!is_text_file(p)) continue;
+
+            std::string path_str = p.string();
+            std::replace(path_str.begin(), path_str.end(), '\\', '/');
+
+            std::string content = read_file(p);
+            std::string current_hash = hash_content(content);
+
+            if (!lock_map.contains(path_str)) {
+                std::cout << " [NEW]      " << path_str << std::endl;
+                changes = true;
+            } else if (lock_map[path_str] != current_hash) {
+                std::cout << " [MODIFIED] " << path_str << std::endl;
+                changes = true;
+            }
+        }
+    }
+
+    if (!changes) {
+        std::cout << "Everything up to date." << std::endl;
+    }
+}
+
+inline void cmd_clean() {
+    if (!fs::exists(DOCFILE)) {
+        std::cerr << "Error: Docfile not found. Run 'docgen init'." << std::endl;
+        return;
+    }
+
+    // Load Docfile to get tracks/ignores
+    std::vector<std::string> tracks;
+    std::vector<std::string> ignores;
+    std::string current_section;
+
+    std::ifstream f(DOCFILE);
+    std::string line;
+    while (std::getline(f, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#') continue;
+
+        size_t comment_pos = line.find('%');
+        if (comment_pos != std::string::npos) {
+            line = trim(line.substr(0, comment_pos));
+        }
+        if (line.empty()) continue;
+
+        if (line == "Track:") {
+            current_section = "track";
+            continue;
+        }
+        if (line == "Ignore:") {
+            current_section = "ignore";
+            continue;
+        }
+        if (line == "Style:") {
+            current_section = "style";
+            continue;
+        }
+
+        size_t eq_pos = line.find('=');
+        std::string pattern = (eq_pos != std::string::npos) ? trim(line.substr(0, eq_pos)) : line;
+
+        if (current_section == "track") tracks.push_back(pattern);
+        if (current_section == "ignore") ignores.push_back(pattern);
+    }
+
+    // Identify currently tracked files
+    std::set<std::string> tracked_files;
+    for (const auto& entry : fs::recursive_directory_iterator(".")) {
+        if (entry.is_regular_file()) {
+            fs::path p = entry.path().lexically_relative(".");
+            std::string p_str = p.string();
+            
+            if (p_str.find(".docgen") == 0) continue;
+
+            bool tracked = false;
+            for (const auto& t : tracks) {
+                if (match_pattern(p, t)) {
+                    tracked = true;
+                    break;
+                }
+            }
+            if (!tracked) continue;
+
+            bool ignored = false;
+            for (const auto& i : ignores) {
+                if (match_pattern(p, i)) {
+                    ignored = true;
+                    break;
+                }
+            }
+            if (ignored) continue;
+
+            if (!is_text_file(p)) continue;
+
+            std::string path_str = p.string();
+            std::replace(path_str.begin(), path_str.end(), '\\', '/');
+            tracked_files.insert(path_str);
+        }
+    }
+
+    // Load tree.json
+    json tree_data;
+    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    if (fs::exists(tree_path)) {
+        std::ifstream f_tree(tree_path);
+        if (f_tree.peek() != std::ifstream::traits_type::eof()) {
+            f_tree >> tree_data;
+        }
+    }
+
+    // Load lockfile
+    json lock_map;
+    if (fs::exists(LOCK_FILE)) {
+        std::ifstream f_lock(LOCK_FILE);
+        if (f_lock.peek() != std::ifstream::traits_type::eof()) {
+            f_lock >> lock_map;
+        }
+    }
+
+    bool changes = false;
+    if (tree_data.contains("files") && tree_data["files"].is_array()) {
+        auto& files = tree_data["files"];
+        for (auto it = files.begin(); it != files.end(); ) {
+            std::string path = (*it)["path"];
+            
+            if (tracked_files.find(path) == tracked_files.end()) {
+                std::cout << "Removing untracked file: " << path << std::endl;
+                
+                // Delete doc file
+                if ((*it).contains("doc_path")) {
+                    std::string doc_path_str = (*it)["doc_path"];
+                    fs::path doc_path = doc_path_str;
+                    if (fs::exists(doc_path)) {
+                        fs::remove(doc_path);
+                        std::cout << "  Deleted: " << doc_path_str << std::endl;
+                    }
+                }
+
+                // Remove from lockfile
+                if (lock_map.contains(path)) {
+                    lock_map.erase(path);
+                }
+
+                it = files.erase(it);
+                changes = true;
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    if (changes) {
+        std::ofstream tree_out(tree_path);
+        tree_out << tree_data.dump(4);
+
+        std::ofstream lock_out(LOCK_FILE);
+        lock_out << lock_map.dump(4);
+        std::cout << "Clean complete." << std::endl;
+    } else {
+        std::cout << "Nothing to clean." << std::endl;
+    }
+}
+
+inline void cmd_validate() {
+    if (!fs::exists(DOCFILE)) {
+        std::cerr << "Error: Docfile not found. Run 'docgen init'." << std::endl;
+        exit(1);
+    }
+
+    json lock_map;
+    if (fs::exists(LOCK_FILE)) {
+        std::ifstream f(LOCK_FILE);
+        if (f.peek() != std::ifstream::traits_type::eof()) {
+            f >> lock_map;
+        }
+    }
+
+    std::vector<std::string> tracks;
+    std::vector<std::string> ignores;
+    std::string current_section;
+
+    std::ifstream f(DOCFILE);
+    std::string line;
+    while (std::getline(f, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#') continue;
+
+        size_t comment_pos = line.find('%');
+        if (comment_pos != std::string::npos) {
+            line = trim(line.substr(0, comment_pos));
+        }
+        if (line.empty()) continue;
+
+        if (line == "Track:") {
+            current_section = "track";
+            continue;
+        }
+        if (line == "Ignore:") {
+            current_section = "ignore";
+            continue;
+        }
+        if (line == "Style:") {
+            current_section = "style";
+            continue;
+        }
+
+        size_t eq_pos = line.find('=');
+        std::string pattern = (eq_pos != std::string::npos) ? trim(line.substr(0, eq_pos)) : line;
+
+        if (current_section == "track") tracks.push_back(pattern);
+        if (current_section == "ignore") ignores.push_back(pattern);
+    }
+
+    std::cout << "Validating documentation..." << std::endl;
+    bool valid = true;
+
+    for (const auto& entry : fs::recursive_directory_iterator(".")) {
+        if (entry.is_regular_file()) {
+            fs::path p = entry.path().lexically_relative(".");
+            std::string p_str = p.string();
+            
+            if (p_str.find(".docgen") == 0) continue;
+
+            bool tracked = false;
+            for (const auto& t : tracks) {
+                if (match_pattern(p, t)) {
+                    tracked = true;
+                    break;
+                }
+            }
+            if (!tracked) continue;
+
+            bool ignored = false;
+            for (const auto& i : ignores) {
+                if (match_pattern(p, i)) {
+                    ignored = true;
+                    break;
+                }
+            }
+            if (ignored) continue;
+
+            if (!is_text_file(p)) continue;
+
+            std::string path_str = p.string();
+            std::replace(path_str.begin(), path_str.end(), '\\', '/');
+
+            std::string content = read_file(p);
+            std::string current_hash = hash_content(content);
+
+            fs::path doc_path = fs::path(DOCS_DIR) / (path_str + ".md");
+
+            if (!lock_map.contains(path_str)) {
+                std::cout << " [FAIL] Untracked/New file: " << path_str << std::endl;
+                valid = false;
+            } else if (lock_map[path_str] != current_hash) {
+                std::cout << " [FAIL] Outdated documentation: " << path_str << std::endl;
+                valid = false;
+            } else if (!fs::exists(doc_path)) {
+                std::cout << " [FAIL] Missing documentation file: " << doc_path.string() << std::endl;
+                valid = false;
+            }
+        }
+    }
+
+    if (valid) {
+        std::cout << "Validation successful." << std::endl;
+    } else {
+        std::cerr << "Validation failed. Run 'docgen update' to fix." << std::endl;
+        exit(1);
+    }
 }
 
 inline void cmd_upgrade() {

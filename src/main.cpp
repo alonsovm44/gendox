@@ -1,16 +1,40 @@
 #include "core.hpp"
 
-const std::string VERSION = "0.0.1";
+const std::string VERSION = "0.1.0";
+
+void print_help() {
+    std::cout << "Usage: docgen <command> [args...]\n\n"
+              << "Commands:\n"
+              << "  init       Initialize a new documentation project\n"
+              << "  config     Manage configuration (AI mode, keys, models)\n"
+              << "  track      Track a file or directory for documentation\n"
+              << "  ignore     Ignore a file or directory\n"
+              << "  update     Generate or update documentation for tracked files\n"
+              << "  status     Show status of tracked files (new/modified)\n"
+              << "  validate   Check if documentation is up-to-date\n"
+              << "  clean      Remove documentation for untracked files\n"
+              << "  summary    Generate a summary of the documentation status\n"
+              << "  upgrade    Upgrade docgen to the latest version\n"
+              << "  reboot     Reset the documentation repository (deletes .docgen/)\n"
+              << "  sponsor    Open the GitHub Sponsors page\n"
+              << "  get-key    Open browser to get a free API key\n"
+              << "  version    Display the current version\n"
+              << "  help       Display this help message\n"
+              << std::endl;
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cout << "Usage: docgen <command> [args...]" << std::endl;
-        return 1;
+        print_help();
+        return 0;
     }
 
     std::string command = argv[1];
 
-    if (command == "version" || command == "-version" || command == "--version") {
+    if (command == "help" || command == "-h" || command == "--help") {
+        print_help();
+        return 0;
+    } else if (command == "version" || command == "-version" || command == "--version") {
         std::cout << "docgen version " << VERSION << std::endl;
         return 0;
     } else if (command == "init") {
@@ -35,6 +59,14 @@ int main(int argc, char* argv[]) {
             verbose = true;
         }
         cmd_update(verbose);
+    } else if (command == "summary") {
+        cmd_summary();
+    } else if (command == "status") {
+        cmd_status();
+    } else if (command == "clean") {
+        cmd_clean();
+    } else if (command == "validate") {
+        cmd_validate();
     } else if (command == "upgrade") {
         cmd_upgrade();
     } else if (command == "reboot") {
@@ -51,7 +83,7 @@ int main(int argc, char* argv[]) {
         system("xdg-open https://apifreellm.com");
 #endif
     } else {
-        std::cout << "Unknown command: " << command << std::endl;
+        std::cout << "Unknown command: " << command << "\nRun 'docgen help' for usage." << std::endl;
         return 1;
     }
 

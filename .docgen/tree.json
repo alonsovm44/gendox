@@ -1,0 +1,36 @@
+{
+    "files": [
+        {
+            "dependencies": [
+                "constants.hpp",
+                "utils.hpp",
+                "set",
+                "thread",
+                "chrono",
+                "map",
+                "ctime"
+            ],
+            "doc_path": ".docgen/docs/src/core.hpp.md",
+            "hash": "6eb9f7cc95d6fe41",
+            "path": "src/core.hpp",
+            "summary": "The `docgen` tool is a command-line utility designed to automate the generation and maintenance of documentation for software projects. It leverages AI models to create comprehensive Markdown documentation for source code files, tracks changes, and manages project configuration."
+        },
+        {
+            "dependencies": [
+                "core.hpp"
+            ],
+            "doc_path": ".docgen/docs/src/main.cpp.md",
+            "hash": "23529cdeb45923f3",
+            "path": "src/main.cpp",
+            "summary": "Here is the updated documentation with **only the sections that changed**, preserving the existing structure and wording wherever possible."
+        },
+        {
+            "dependencies": [],
+            "doc_path": ".docgen/docs/CHANGELOG.md.md",
+            "hash": "bab66a3cb1fdc635",
+            "path": "CHANGELOG.md",
+            "summary": "Below is a polished, comprehensive Markdown documentation section based on the provided changelog. It focuses on purpose, usage, and behavior rather than restating the obvious."
+        }
+    ],
+    "last_update": "2026-03-07T08:21:40Z"
+}
