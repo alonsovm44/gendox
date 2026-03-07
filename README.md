@@ -107,7 +107,48 @@ $ docgen config
 Usage: docgen config <key> <value>
 Keys: mode, protocol, key, model
 ```
- #### Setting up an API key
- ```bash
-$ docgen config 
- ```
+#### Check Connection
+To verify if Docgen can connect to the configured AI provider:
+```bash
+docgen config check
+```
+
+#### Switching Modes
+Docgen supports two modes: `local` (default, uses Ollama) and `cloud` (uses external APIs).
+
+**1. Local Mode (Ollama)**
+This is the default. It requires Ollama running locally.
+```bash
+# Set mode to local
+docgen config mode local
+
+# Set the model (e.g., qwen2.5-coder:7b, llama3, mistral)
+docgen config model qwen2.5-coder:7b
+```
+
+**2. Cloud Mode (OpenAI, Google, etc.)**
+Use this to connect to OpenAI, Google Gemini, or compatible APIs.
+
+```bash
+# Set mode to cloud
+docgen config mode cloud
+
+# Set your API key
+docgen config key sk-your-api-key-here
+
+# Set the model ID (e.g., gpt-4o, gemini-1.5-flash)
+docgen config model gpt-4o
+
+# Set the protocol (openai, google, or simple)
+# 'openai' is standard for most providers including DeepSeek, Groq, etc.
+docgen config protocol openai
+```
+
+#### Configuration Keys reference
+
+| Key | Description | Values |
+| :--- | :--- | :--- |
+| `mode` | Determines the backend to use. | `local`, `cloud` |
+| `key` | API Key for cloud providers. | Your API Key |
+| `model` | The model identifier to use. | e.g., `gpt-4o`, `llama3` |
+| `protocol` | The API format to use. | `openai`, `google`, `simple` |
