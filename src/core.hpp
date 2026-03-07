@@ -53,6 +53,7 @@ inline void cmd_config(int argc, char* argv[]) {
     if (argc < 3) {
         std::cout << "Usage: docgen config <key> <value>\nKeys: mode, protocol, key, model" << std::endl;
         std::cout << "       docgen config see" << std::endl;
+        std::cout << "       docgen config check" << std::endl;
         return;
     }
     std::string key = argv[2];
@@ -69,8 +70,67 @@ inline void cmd_config(int argc, char* argv[]) {
         return;
     }
 
+    if (key == "check") {
+        if (!fs::exists(CONFIG_FILE)) {
+            std::cerr << "Error: Config file not found. Run 'docgen init'." << std::endl;
+            return;
+        }
+        std::ifstream i(CONFIG_FILE);
+        json config;
+        i >> config;
+
+        std::string mode = config.value("mode", "local");
+        std::cout << "Checking connection for mode: " << mode << "..." << std::endl;
+
+        std::string api_url;
+        std::string api_key;
+        std::string model_id;
+        std::string protocol;
+
+        if (mode == "cloud") {
+            api_url = config["cloud"]["api_url"];
+            api_key = config["cloud"]["api_key"];
+            model_id = config["cloud"]["model_id"];
+            protocol = config["cloud"].value("protocol", "simple");
+        } else {
+            api_url = config["local"]["api_url"];
+            model_id = config["local"]["model_id"];
+            protocol = "simple";
+        }
+
+        std::string prompt = "Test connection. Reply with 'OK'.";
+        json body;
+        if (protocol == "openai") {
+            body = {{"model", model_id}, {"messages", {{{"role", "user"}, {"content", prompt}}}}};
+        } else if (protocol == "google") {
+            body = {{"contents", {{{"parts", {{{"text", prompt}}}}}}}};
+        } else {
+            body = {{"model", model_id}, {"message", prompt}};
+        }
+
+        std::vector<std::string> headers;
+        if (!api_key.empty() && api_key != "your_api_key") {
+            headers.push_back("Authorization: Bearer " + api_key);
+        }
+
+        std::cout << "Sending request to " << api_url << "..." << std::endl;
+        std::string response_str = exec_curl(api_url, headers, body);
+
+        try {
+            json response = json::parse(response_str);
+            if (response.contains("error") || (response.contains("code") && response["code"].is_number() && response["code"].get<int>() >= 400)) {
+                std::cerr << "Connection failed: " << response.dump(4) << std::endl;
+            } else {
+                std::cout << "Connection successful!" << std::endl;
+            }
+        } catch (...) {
+            std::cerr << "Connection failed. Invalid JSON response: " << response_str << std::endl;
+        }
+        return;
+    }
+
     if (argc < 4) {
-        std::cout << "Usage: docgen config <key> <value>\nKeys: mode\nValues: local, cloud" << std::endl;
+        std::cout << "Usage: docgen config <key> <value>\nKeys: mode, protocol, key, model" << std::endl;
         return;
     }
     std::string value = argv[3];
@@ -98,8 +158,25 @@ inline void cmd_config(int argc, char* argv[]) {
         config["cloud"]["protocol"] = value;
         std::ofstream o(CONFIG_FILE);
         o << config.dump(4);
-.\build
+
         std::cout << "Config updated: cloud.protocol = " << value << std::endl;
+    } else if (key == "key") {
+        config["cloud"]["api_key"] = value;
+        std::ofstream o(CONFIG_FILE);
+        o << config.dump(4);
+
+        std::cout << "Config updated: cloud.api_key = " << value << std::endl;
+    } else if (key == "model") {
+        std::string current_mode = config.value("mode", "local");
+        if (current_mode == "cloud") {
+            config["cloud"]["model_id"] = value;
+            std::cout << "Config updated: cloud.model_id = " << value << std::endl;
+        } else {
+            config["local"]["model_id"] = value;
+            std::cout << "Config updated: local.model_id = " << value << std::endl;
+        }
+        std::ofstream o(CONFIG_FILE);
+        o << config.dump(4);
     } else {
         std::cerr << "Error: Unknown key '" << key << "'." << std::endl;
     }
@@ -160,7 +237,14 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
     fs::path current_path = fs::path(filepath);
     fs::path parent_path = current_path.parent_path();
 
+    const size_t MAX_CONTEXT_CHARS = 12000; // Approx 3000 tokens to prevent prompt fatigue
+    bool context_truncated = false;
+
     for (const auto& inc : includes) {
+        if (context_section.size() >= MAX_CONTEXT_CHARS) {
+            context_truncated = true;
+            break;
+        }
         // Try relative to current file first, then relative to root
         fs::path p = parent_path / inc;
         if (!fs::exists(p)) {
@@ -177,8 +261,16 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
             if (cache.find(abs_path) == cache.end()) {
                 cache[abs_path] = read_file(p);
             }
-            context_section += "Context from " + inc + ":\n```cpp\n" + cache[abs_path] + "\n```\n\n";
+            
+            if (context_section.size() + cache[abs_path].size() <= MAX_CONTEXT_CHARS) {
+                context_section += "Context from " + inc + ":\n```cpp\n" + cache[abs_path] + "\n```\n\n";
+            } else {
+                context_truncated = true;
+            }
         }
+    }
+    if (context_truncated) {
+        context_section += "\n> Note: Some context files were omitted to fit within the prompt limit.\n\n";
     }
 
     std::string style_prompt;
@@ -189,7 +281,10 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
         }
     }
 
-    std::string prompt = context_section + "Generate Markdown documentation for the following code:\n" + content + style_prompt;
+    std::string prompt = context_section + 
+        "Generate comprehensive Markdown documentation for the following code.\n"
+        "Focus on the purpose, usage, and behavior. Avoid stating the obvious.\n"
+        "Code:\n" + content + style_prompt;
     std::string doc_text;
 
     int max_retries = 5;
@@ -204,7 +299,7 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
             std::string api_key = config["cloud"]["api_key"];
             std::string api_url = config["cloud"]["api_url"];
             std::string model_id = config["cloud"]["model_id"];
-            std::string protocol = config["cloud"].value("protocol", "openai");
+            std::string protocol = config["cloud"].value("protocol", "simple");
 
             json body;
             if (protocol == "openai") {
@@ -246,6 +341,12 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
                     if (response.contains("code") && response["code"] == 401) {
                         error_msg += "\nHint: Use 'docgen config key <your_api_key>' to set your API key.";
                     }
+                    if ((response.contains("code") && response["code"] == 429) || 
+                        (response.contains("error") && response["error"].contains("code") && 
+                         (response["error"]["code"] == 429 || response["error"]["code"] == "429"))) {
+                        error_msg += "\nRate limit exceeded (429).";
+                    }
+
                     if (response.contains("retryAfter")) {
                         wait_time = response["retryAfter"].get<int>() + 2;
                         rate_limited = true;
@@ -452,6 +553,18 @@ inline void cmd_update(bool verbose = false) {
     std::ofstream out(LOCK_FILE);
     out << lock_map.dump(4);
     std::cout << "Update complete." << std::endl;
+}
+
+inline void cmd_upgrade() {
+    std::cout << "Checking for updates..." << std::endl;
+#ifdef _WIN32
+    // Execute the PowerShell update script from the master branch
+    int result = system("powershell -Command \"irm https://raw.githubusercontent.com/alonsovm44/docgen/master/update.ps1 | iex\"");
+#else
+    // Execute the Bash update script from the master branch
+    int result = system("curl -fsSL https://raw.githubusercontent.com/alonsovm44/docgen/master/update.sh | bash");
+#endif
+    if (result != 0) std::cerr << "Upgrade failed." << std::endl;
 }
 
 inline void cmd_reboot() {

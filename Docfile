@@ -3,6 +3,11 @@ Track:
 
     src/main.cpp
     src/
+    installer.ps1
+    installer.sh
 Ignore:
     # Example: secret.cpp
     src/json.hpp
+
+Style:
+    -dont use emojis

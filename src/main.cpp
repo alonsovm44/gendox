@@ -35,6 +35,8 @@ int main(int argc, char* argv[]) {
             verbose = true;
         }
         cmd_update(verbose);
+    } else if (command == "upgrade") {
+        cmd_upgrade();
     } else if (command == "reboot") {
         cmd_reboot();
     } else if (command == "sponsor") {

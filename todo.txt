@@ -1,2 +1,3 @@
-styles block for Docfile
 a way to make docgen respect user written docs
+censor API key when using config see
+parse config see menu to output a pretty table

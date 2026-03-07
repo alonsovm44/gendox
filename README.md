@@ -3,6 +3,9 @@
 
 Docgen is a lightweight, C++ CLI tool that automates software documentation using Large Language Models (LLMs). It treats documentation generation as a build step, tracking your source code and incrementally updating documentation only when files change.
 
+## Why this solves "Documentation Hell"
+The biggest pain point in documentation is Staleness. Because Docgen uses a lockfile (docgen.lock) and hashes, you can bake docgen update into your Git hooks or CI/CD. The documentation stays in sync with the code without the developer having to manually rewrite Markdown files every time a function signature changes.
+
 ## Features
 
 *   **Docs-as-Code**: Generates Markdown documentation that lives right next to your source code.
@@ -50,7 +53,7 @@ irm https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.ps1 | i
 curl -fsSL https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.sh | bash
 ```
 
-## Other commands
+### Other commands
 
 ### Reboot
 Run this command to reset your documentation repository (asks for confirmation)
@@ -58,10 +61,16 @@ Run this command to reset your documentation repository (asks for confirmation)
 docgen reboot
 ```
 ### config
-Configure docgen with 
+Docgen comes with a config.json file within your `./docgen` folder. In it you can configure A.I parameters
+
+You can also run 
 ```shell
 $ docgen config
+
 Usage: docgen config <key> <value>
 Keys: mode, protocol, key, model
-       docgen config see
 ```
+ #### Setting up an API key
+ ```bash
+$ docgen config 
+ ```

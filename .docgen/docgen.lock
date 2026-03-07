@@ -1,6 +1,10 @@
 {
+    "installer.ps1": "4cc276f22dd322e3",
+    "installer.sh": "82d0f7d676bf319e",
     "src/constants.hpp": "3482fbc1f686596e",
-    "src/core.hpp": "e34dcfedcde218e9",
-    "src/main.cpp": "0962968d97c74289",
-    "src/utils.hpp": "a5c5ee5578549c10"
+    "src/core.hpp": "6c2f8f8e092e0691",
+    "src/main.cpp": "b03c0d835f41e9a3",
+    "src/update.ps1": "431c7e586ef7e012",
+    "src/update.sh": "82490b79f91725f9",
+    "src/utils.hpp": "13475e233e659755"
 }

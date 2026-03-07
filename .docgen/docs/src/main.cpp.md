@@ -1,148 +1,101 @@
-```markdown
-# `docgen` Command-Line Tool  
-A lightweight command dispatcher that routes subcommands to internal functions defined in `core.hpp`.
-
----
+# docgen Command-Line Tool Documentation
 
 ## Overview
-The `docgen` executable accepts a primary command followed by optional arguments. It validates input, dispatches to the appropriate handler, and prints usage guidance when invoked incorrectly. Unsupported commands produce an error message.
-
----
+The `docgen` tool is a command-line utility designed to manage documentation-related tasks. It provides a set of commands to initialize, configure, track, and update documentation projects. The tool also includes utility commands for version checking, upgrading, and accessing external resources.
 
 ## Usage
+The tool is invoked via the command line with the following syntax:
 ```bash
 docgen <command> [args...]
 ```
 
-### Available Commands
-- `init`
-- `config`
-- `track <path>`
-- `ignore <path>`
-- `update [-v|--verbose]`
-- `reboot`
-- `get-key`
+## Commands
 
----
+### Version
+**Purpose:** Display the current version of the `docgen` tool.  
+**Usage:**  
+```bash
+docgen version
+```  
+**Aliases:** `-version`, `--version`  
+**Behavior:** Prints the version string (`docgen version 0.0.1`) and exits successfully.
 
-## Command Reference
+### Init
+**Purpose:** Initialize a new documentation project.  
+**Usage:**  
+```bash
+docgen init
+```  
+**Behavior:** Calls the `cmd_init()` function to set up the necessary project structure.
 
-### 🧱 `init`
-Initializes the tool’s environment.
-
-**Behavior**
-- Calls `cmd_init()` with no arguments.
-
----
-
-### ⚙️ `config`
-Manages configuration settings.
-
-**Usage**
+### Config
+**Purpose:** Manage configuration settings for the documentation project.  
+**Usage:**  
 ```bash
 docgen config [args...]
-```
+```  
+**Behavior:** Calls the `cmd_config()` function, passing all arguments for configuration management.
 
-**Behavior**
-- Passes full `argc` and `argv` to `cmd_config()` for flexible configuration handling.
-
----
-
-### 📁 `track`
-Marks a file or directory to be tracked.
-
-**Usage**
+### Track
+**Purpose:** Add a file or directory to the documentation tracking system.  
+**Usage:**  
 ```bash
 docgen track <path>
-```
+```  
+**Behavior:** Requires a `<path>` argument. Calls `cmd_track_ignore("track", <path>)` to mark the specified path for tracking.
 
-**Behavior**
-- Requires a path argument.
-- Calls `cmd_track_ignore("track", <path>)`.
-
-**Error Handling**
-- If `<path>` is missing, prints:
-  ```
-  Usage: docgen track <path>
-  ```
-
----
-
-### 🚫 `ignore`
-Marks a file or directory to be ignored.
-
-**Usage**
+### Ignore
+**Purpose:** Exclude a file or directory from the documentation tracking system.  
+**Usage:**  
 ```bash
 docgen ignore <path>
-```
+```  
+**Behavior:** Requires a `<path>` argument. Calls `cmd_track_ignore("ignore", <path>)` to mark the specified path for exclusion.
 
-**Behavior**
-- Requires a path argument.
-- Calls `cmd_track_ignore("ignore", <path>)`.
-
-**Error Handling**
-- If `<path>` is missing, prints:
-  ```
-  Usage: docgen ignore <path>
-  ```
-
----
-
-### 🔄 `update`
-Updates internal state or metadata.
-
-**Usage**
+### Update
+**Purpose:** Update the documentation based on tracked changes.  
+**Usage:**  
 ```bash
-docgen update [-v|--verbose]
-```
+docgen update [-v | --verbose]
+```  
+**Behavior:** Optionally accepts a verbose flag (`-v` or `--verbose`). Calls `cmd_update(verbose)` to perform updates, with verbose output if enabled.
 
-**Behavior**
-- Optional `-v` or `--verbose` flag enables verbose mode.
-- Calls `cmd_update(verbose)`.
+### Upgrade
+**Purpose:** Upgrade the `docgen` tool to the latest version.  
+**Usage:**  
+```bash
+docgen upgrade
+```  
+**Behavior:** Calls `cmd_upgrade()` to handle the upgrade process.
 
----
+### Reboot
+**Purpose:** Reboot the documentation system (specific implementation details not provided).  
+**Usage:**  
+```bash
+docgen reboot
+```  
+**Behavior:** Calls `cmd_reboot()` to perform the reboot action.
 
-### ♻️ `reboot`
-Performs a system or internal reboot operation.
+### Sponsor
+**Purpose:** Access sponsorship information or resources.  
+**Usage:**  
+```bash
+docgen sponsor
+```  
+**Behavior:** Calls `cmd_sponsor()` to handle sponsorship-related actions.
 
-**Behavior**
-- Calls `cmd_reboot()`.
-
----
-
-### 🔑 `get-key`
-Opens a browser to retrieve an API key.
-
-**Behavior**
-- Launches the default browser to `https://apifreellm.com`.
-- Platform-specific:
-  - Windows: `start`
-  - macOS: `open`
-  - Linux: `xdg-open`
-
----
+### Get-Key
+**Purpose:** Open a browser to retrieve an API key from `https://apifreellm.com`.  
+**Usage:**  
+```bash
+docgen get-key
+```  
+**Behavior:** Uses platform-specific commands (`start`, `open`, or `xdg-open`) to open the specified URL in the default browser.
 
 ## Error Handling
+- If no command is provided, the tool prints usage instructions and exits with a failure code (`1`).  
+- Unknown commands result in an "Unknown command" message and exit with a failure code (`1`).  
+- Commands requiring arguments (e.g., `track`, `ignore`) print usage instructions and exit with a failure code (`1`) if arguments are missing.
 
-### Unknown Command
-If the user provides an unrecognized command:
-```
-Unknown command: <command>
-```
-
-### Missing Command
-If no command is provided:
-```
-Usage: docgen <command> [args...]
-```
-
----
-
-## Program Flow Summary
-1. Validate that at least one command is provided.
-2. Match the command string against supported commands.
-3. Validate required arguments for each command.
-4. Dispatch to the corresponding handler function.
-5. Print helpful usage messages on incorrect input.
-
----
+## Dependencies
+The tool relies on functions defined in `core.hpp` (`cmd_init()`, `cmd_config()`, `cmd_track_ignore()`, etc.) for command implementations. Platform-specific commands are used for opening URLs in the `get-key` command.
