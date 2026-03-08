@@ -10,10 +10,12 @@ void print_help() {
               << "  track      Track a file or directory for documentation\n"
               << "  ignore     Ignore a file or directory\n"
               << "  update     Generate or update documentation for tracked files\n"
+              << "  auto       Automatically update documentation when files change\n"
               << "  status     Show status of tracked files (new/modified)\n"
               << "  validate   Check if documentation is up-to-date\n"
               << "  clean      Remove documentation for untracked files\n"
               << "  graph      Generate dependency graph (DOT format)\n"
+              << "  query      Ask a question about the codebase\n"
               << "  summary    Generate a summary of the documentation status\n"
               << "  upgrade    Upgrade docgen to the latest version\n"
               << "  reboot     Reset the documentation repository (deletes .docgen/)\n"
@@ -60,6 +62,8 @@ int main(int argc, char* argv[]) {
             verbose = true;
         }
         cmd_update(verbose);
+    } else if (command == "auto") {
+        cmd_auto();
     } else if (command == "summary") {
         cmd_summary();
     } else if (command == "status") {
@@ -70,6 +74,12 @@ int main(int argc, char* argv[]) {
         cmd_validate();
     } else if (command == "graph") {
         cmd_graph();
+    } else if (command == "query") {
+        if (argc < 3) {
+            std::cout << "Usage: docgen query \"<question>\"" << std::endl;
+            return 1;
+        }
+        cmd_query(argv[2]);
     } else if (command == "upgrade") {
         cmd_upgrade();
     } else if (command == "reboot") {

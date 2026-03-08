@@ -9,6 +9,109 @@
 
 using IncludeCache = std::map<std::string, std::string>;
 
+struct DocfileConfig {
+    std::vector<std::string> tracks;
+    std::vector<std::string> ignores;
+    std::vector<std::string> styles;
+};
+
+inline DocfileConfig parse_docfile() {
+    DocfileConfig config;
+    if (!fs::exists(DOCFILE)) return config;
+
+    std::ifstream f(DOCFILE);
+    std::string line;
+    std::string current_section;
+    while (std::getline(f, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#') continue;
+
+        size_t comment_pos = line.find('%');
+        if (comment_pos != std::string::npos) {
+            line = trim(line.substr(0, comment_pos));
+        }
+        if (line.empty()) continue;
+
+        if (line == "Track:") {
+            current_section = "track";
+            continue;
+        }
+        if (line == "Ignore:") {
+            current_section = "ignore";
+            continue;
+        }
+        if (line == "Style:") {
+            current_section = "style";
+            continue;
+        }
+
+        size_t eq_pos = line.find('=');
+        std::string pattern = (eq_pos != std::string::npos) ? trim(line.substr(0, eq_pos)) : line;
+
+        if (current_section == "track") config.tracks.push_back(pattern);
+        if (current_section == "ignore") config.ignores.push_back(pattern);
+        if (current_section == "style") config.styles.push_back(pattern);
+    }
+    return config;
+}
+
+inline std::set<fs::path> scan_files(const DocfileConfig& config) {
+    bool ignore_hidden = false;
+    if (fs::exists(CONFIG_FILE)) {
+        std::ifstream i(CONFIG_FILE);
+        json j;
+        if (i.peek() != std::ifstream::traits_type::eof()) {
+            i >> j;
+            ignore_hidden = j.value("ignore_hidden", false);
+        }
+    }
+
+    std::set<fs::path> files;
+    for (const auto& entry : fs::recursive_directory_iterator(".")) {
+        if (entry.is_regular_file()) {
+            fs::path p = entry.path().lexically_relative(".");
+            std::string p_str = p.string();
+            
+            if (p_str.find(".docgen") == 0) continue;
+
+            if (ignore_hidden) {
+                bool hidden = false;
+                for (const auto& part : p) {
+                    std::string part_str = part.string();
+                    if (!part_str.empty() && part_str[0] == '.' && part_str != "." && part_str != "..") {
+                        hidden = true;
+                        break;
+                    }
+                }
+                if (hidden) continue;
+            }
+
+            bool tracked = false;
+            for (const auto& t : config.tracks) {
+                if (match_pattern(p, t)) {
+                    tracked = true;
+                    break;
+                }
+            }
+            if (!tracked) continue;
+
+            bool ignored = false;
+            for (const auto& i : config.ignores) {
+                if (match_pattern(p, i)) {
+                    ignored = true;
+                    break;
+                }
+            }
+            if (ignored) continue;
+
+            if (!is_text_file(p)) continue;
+
+            files.insert(p);
+        }
+    }
+    return files;
+}
+
 inline void cmd_init() {
     if (fs::exists(DOCGEN_DIR) || fs::exists(DOCFILE)) {
         std::cerr << "Error: .docgen/ or Docfile already exists." << std::endl;
@@ -32,6 +135,7 @@ inline void cmd_init() {
     // Create config
     json config = {
         {"mode", "local"},
+        {"ignore_hidden", false},
         {"cloud", {
             {"api_key", "your_api_key"},
             {"api_url", "https://apifreellm.com/api/v1/chat"},
@@ -65,7 +169,7 @@ inline void cmd_init() {
 
 inline void cmd_config(int argc, char* argv[]) {
     if (argc < 3) {
-        std::cout << "Usage: docgen config <key> <value>\nKeys: mode, protocol, key, model" << std::endl;
+        std::cout << "Usage: docgen config <key> <value>\nKeys: mode, protocol, key, model, ignore-hidden" << std::endl;
         std::cout << "       docgen config see" << std::endl;
         std::cout << "       docgen config check" << std::endl;
         return;
@@ -144,7 +248,7 @@ inline void cmd_config(int argc, char* argv[]) {
     }
 
     if (argc < 4) {
-        std::cout << "Usage: docgen config <key> <value>\nKeys: mode, protocol, key, model" << std::endl;
+        std::cout << "Usage: docgen config <key> <value>\nKeys: mode, protocol, key, model, ignore-hidden" << std::endl;
         return;
     }
     std::string value = argv[3];
@@ -168,6 +272,12 @@ inline void cmd_config(int argc, char* argv[]) {
         } else {
             std::cerr << "Error: Invalid mode. Use 'local' or 'cloud'." << std::endl;
         }
+    } else if (key == "ignore-hidden") {
+        bool val = (value == "true" || value == "1");
+        config["ignore_hidden"] = val;
+        std::ofstream o(CONFIG_FILE);
+        o << config.dump(4);
+        std::cout << "Config updated: ignore_hidden = " << (val ? "true" : "false") << std::endl;
     } else if (key == "protocol") {
         config["cloud"]["protocol"] = value;
         std::ofstream o(CONFIG_FILE);
@@ -437,7 +547,7 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
     return false;
 }
 
-inline void cmd_update(bool verbose = false) {
+inline void cmd_update(bool verbose = false, bool auto_mode = false) {
     if (!fs::exists(DOCFILE)) {
         std::cerr << "Error: Docfile not found. Run 'docgen init'." << std::endl;
         exit(1);
@@ -468,80 +578,8 @@ inline void cmd_update(bool verbose = false) {
         tree_data.erase("project");
     }
 
-    std::vector<std::string> tracks;
-    std::vector<std::string> ignores;
-    std::vector<std::string> styles;
-    std::string current_section;
-
-    std::ifstream f(DOCFILE);
-    std::string line;
-    while (std::getline(f, line)) {
-        line = trim(line);
-        if (line.empty() || line[0] == '#') continue;
-
-        // Handle comments with %
-        size_t comment_pos = line.find('%');
-        if (comment_pos != std::string::npos) {
-            line = trim(line.substr(0, comment_pos));
-        }
-        if (line.empty()) continue;
-
-        if (line == "Track:") {
-            current_section = "track";
-            continue;
-        }
-        if (line == "Ignore:") {
-            current_section = "ignore";
-            continue;
-        }
-        if (line == "Style:") {
-            current_section = "style";
-            continue;
-        }
-
-        // Handle "pattern =" syntax if present, though example shows just pattern
-        size_t eq_pos = line.find('=');
-        std::string pattern = (eq_pos != std::string::npos) ? trim(line.substr(0, eq_pos)) : line;
-
-        if (current_section == "track") tracks.push_back(pattern);
-        if (current_section == "ignore") ignores.push_back(pattern);
-        if (current_section == "style") styles.push_back(pattern);
-    }
-
-    // Collect files
-    std::set<fs::path> files_to_process;
-    for (const auto& entry : fs::recursive_directory_iterator(".")) {
-        if (entry.is_regular_file()) {
-            fs::path p = entry.path().lexically_relative(".");
-            std::string p_str = p.string();
-            
-            // Skip .docgen
-            if (p_str.find(".docgen") == 0) continue;
-
-            // Check matches
-            bool tracked = false;
-            for (const auto& t : tracks) {
-                if (match_pattern(p, t)) {
-                    tracked = true;
-                    break;
-                }
-            }
-            if (!tracked) continue;
-
-            bool ignored = false;
-            for (const auto& i : ignores) {
-                if (match_pattern(p, i)) {
-                    ignored = true;
-                    break;
-                }
-            }
-            if (ignored) continue;
-
-            if (!is_text_file(p)) continue;
-
-            files_to_process.insert(p);
-        }
-    }
+    DocfileConfig config = parse_docfile();
+    std::set<fs::path> files_to_process = scan_files(config);
 
     // Identify files to update
     struct Task {
@@ -551,7 +589,9 @@ inline void cmd_update(bool verbose = false) {
     };
     std::vector<Task> tasks;
 
-    std::cout << "Scanning " << files_to_process.size() << " files..." << std::endl;
+    if (!auto_mode) {
+        std::cout << "Scanning " << files_to_process.size() << " files..." << std::endl;
+    }
     for (const auto& filepath : files_to_process) {
         std::string content = read_file(filepath);
         std::string current_hash = hash_content(content);
@@ -565,8 +605,13 @@ inline void cmd_update(bool verbose = false) {
     }
 
     if (tasks.empty()) {
-        std::cout << "All files are up to date." << std::endl;
+        if (!auto_mode) {
+            std::cout << "All files are up to date." << std::endl;
+        }
         return;
+    }
+    if (auto_mode) {
+        std::cout << "Changes detected. Updating..." << std::endl;
     }
 
     // Process updates
@@ -593,7 +638,7 @@ inline void cmd_update(bool verbose = false) {
         
         std::string content = read_file(task.path);
         std::string doc_content;
-        if (call_ai(task.path_str, content, cache, styles, doc_content, verbose)) {
+        if (call_ai(task.path_str, content, cache, config.styles, doc_content, verbose)) {
             lock_map[task.path_str] = task.hash;
 
             // Update tree.json entry
@@ -652,6 +697,35 @@ inline void cmd_update(bool verbose = false) {
     }
 
     std::cout << "Update complete." << std::endl;
+}
+
+inline void cmd_auto() {
+    std::cout << "Docgen Auto-Update Mode" << std::endl;
+    std::cout << "Watching tracked files for changes... (Ctrl+C to stop)" << std::endl;
+    
+    std::map<std::string, fs::file_time_type> last_write_times;
+
+    while (true) {
+        DocfileConfig config = parse_docfile();
+        std::set<fs::path> files = scan_files(config);
+        bool changed = false;
+
+        for (const auto& p : files) {
+            try {
+                auto current_time = fs::last_write_time(p);
+                std::string path_str = p.string();
+                if (last_write_times.find(path_str) == last_write_times.end() || last_write_times[path_str] != current_time) {
+                    last_write_times[path_str] = current_time;
+                    changed = true;
+                }
+            } catch (...) { continue; }
+        }
+
+        if (changed) {
+            cmd_update(false, true);
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }
 
 inline void cmd_summary() {
@@ -725,72 +799,13 @@ inline void cmd_status() {
         }
     }
 
-    std::vector<std::string> tracks;
-    std::vector<std::string> ignores;
-    std::string current_section;
-
-    std::ifstream f(DOCFILE);
-    std::string line;
-    while (std::getline(f, line)) {
-        line = trim(line);
-        if (line.empty() || line[0] == '#') continue;
-
-        size_t comment_pos = line.find('%');
-        if (comment_pos != std::string::npos) {
-            line = trim(line.substr(0, comment_pos));
-        }
-        if (line.empty()) continue;
-
-        if (line == "Track:") {
-            current_section = "track";
-            continue;
-        }
-        if (line == "Ignore:") {
-            current_section = "ignore";
-            continue;
-        }
-        if (line == "Style:") {
-            current_section = "style";
-            continue;
-        }
-
-        size_t eq_pos = line.find('=');
-        std::string pattern = (eq_pos != std::string::npos) ? trim(line.substr(0, eq_pos)) : line;
-
-        if (current_section == "track") tracks.push_back(pattern);
-        if (current_section == "ignore") ignores.push_back(pattern);
-    }
+    DocfileConfig config = parse_docfile();
+    std::set<fs::path> files = scan_files(config);
 
     std::cout << "Project Status:\n" << std::endl;
     bool changes = false;
 
-    for (const auto& entry : fs::recursive_directory_iterator(".")) {
-        if (entry.is_regular_file()) {
-            fs::path p = entry.path().lexically_relative(".");
-            std::string p_str = p.string();
-            
-            if (p_str.find(".docgen") == 0) continue;
-
-            bool tracked = false;
-            for (const auto& t : tracks) {
-                if (match_pattern(p, t)) {
-                    tracked = true;
-                    break;
-                }
-            }
-            if (!tracked) continue;
-
-            bool ignored = false;
-            for (const auto& i : ignores) {
-                if (match_pattern(p, i)) {
-                    ignored = true;
-                    break;
-                }
-            }
-            if (ignored) continue;
-
-            if (!is_text_file(p)) continue;
-
+    for (const auto& p : files) {
             std::string path_str = p.string();
             std::replace(path_str.begin(), path_str.end(), '\\', '/');
 
@@ -804,7 +819,6 @@ inline void cmd_status() {
                 std::cout << " [MODIFIED] " << path_str << std::endl;
                 changes = true;
             }
-        }
     }
 
     if (!changes) {
@@ -818,76 +832,15 @@ inline void cmd_clean() {
         return;
     }
 
-    // Load Docfile to get tracks/ignores
-    std::vector<std::string> tracks;
-    std::vector<std::string> ignores;
-    std::string current_section;
-
-    std::ifstream f(DOCFILE);
-    std::string line;
-    while (std::getline(f, line)) {
-        line = trim(line);
-        if (line.empty() || line[0] == '#') continue;
-
-        size_t comment_pos = line.find('%');
-        if (comment_pos != std::string::npos) {
-            line = trim(line.substr(0, comment_pos));
-        }
-        if (line.empty()) continue;
-
-        if (line == "Track:") {
-            current_section = "track";
-            continue;
-        }
-        if (line == "Ignore:") {
-            current_section = "ignore";
-            continue;
-        }
-        if (line == "Style:") {
-            current_section = "style";
-            continue;
-        }
-
-        size_t eq_pos = line.find('=');
-        std::string pattern = (eq_pos != std::string::npos) ? trim(line.substr(0, eq_pos)) : line;
-
-        if (current_section == "track") tracks.push_back(pattern);
-        if (current_section == "ignore") ignores.push_back(pattern);
-    }
+    DocfileConfig config = parse_docfile();
+    std::set<fs::path> files = scan_files(config);
 
     // Identify currently tracked files
     std::set<std::string> tracked_files;
-    for (const auto& entry : fs::recursive_directory_iterator(".")) {
-        if (entry.is_regular_file()) {
-            fs::path p = entry.path().lexically_relative(".");
-            std::string p_str = p.string();
-            
-            if (p_str.find(".docgen") == 0) continue;
-
-            bool tracked = false;
-            for (const auto& t : tracks) {
-                if (match_pattern(p, t)) {
-                    tracked = true;
-                    break;
-                }
-            }
-            if (!tracked) continue;
-
-            bool ignored = false;
-            for (const auto& i : ignores) {
-                if (match_pattern(p, i)) {
-                    ignored = true;
-                    break;
-                }
-            }
-            if (ignored) continue;
-
-            if (!is_text_file(p)) continue;
-
+    for (const auto& p : files) {
             std::string path_str = p.string();
             std::replace(path_str.begin(), path_str.end(), '\\', '/');
             tracked_files.insert(path_str);
-        }
     }
 
     // Load tree.json
@@ -967,72 +920,13 @@ inline void cmd_validate() {
         }
     }
 
-    std::vector<std::string> tracks;
-    std::vector<std::string> ignores;
-    std::string current_section;
-
-    std::ifstream f(DOCFILE);
-    std::string line;
-    while (std::getline(f, line)) {
-        line = trim(line);
-        if (line.empty() || line[0] == '#') continue;
-
-        size_t comment_pos = line.find('%');
-        if (comment_pos != std::string::npos) {
-            line = trim(line.substr(0, comment_pos));
-        }
-        if (line.empty()) continue;
-
-        if (line == "Track:") {
-            current_section = "track";
-            continue;
-        }
-        if (line == "Ignore:") {
-            current_section = "ignore";
-            continue;
-        }
-        if (line == "Style:") {
-            current_section = "style";
-            continue;
-        }
-
-        size_t eq_pos = line.find('=');
-        std::string pattern = (eq_pos != std::string::npos) ? trim(line.substr(0, eq_pos)) : line;
-
-        if (current_section == "track") tracks.push_back(pattern);
-        if (current_section == "ignore") ignores.push_back(pattern);
-    }
+    DocfileConfig config = parse_docfile();
+    std::set<fs::path> files = scan_files(config);
 
     std::cout << "Validating documentation..." << std::endl;
     bool valid = true;
 
-    for (const auto& entry : fs::recursive_directory_iterator(".")) {
-        if (entry.is_regular_file()) {
-            fs::path p = entry.path().lexically_relative(".");
-            std::string p_str = p.string();
-            
-            if (p_str.find(".docgen") == 0) continue;
-
-            bool tracked = false;
-            for (const auto& t : tracks) {
-                if (match_pattern(p, t)) {
-                    tracked = true;
-                    break;
-                }
-            }
-            if (!tracked) continue;
-
-            bool ignored = false;
-            for (const auto& i : ignores) {
-                if (match_pattern(p, i)) {
-                    ignored = true;
-                    break;
-                }
-            }
-            if (ignored) continue;
-
-            if (!is_text_file(p)) continue;
-
+    for (const auto& p : files) {
             std::string path_str = p.string();
             std::replace(path_str.begin(), path_str.end(), '\\', '/');
 
@@ -1051,7 +945,6 @@ inline void cmd_validate() {
                 std::cout << " [FAIL] Missing documentation file: " << doc_path.string() << std::endl;
                 valid = false;
             }
-        }
     }
 
     if (valid) {
@@ -1112,6 +1005,118 @@ inline void cmd_graph() {
 
     std::cout << "Graph generated: " << output_path.string() << std::endl;
     std::cout << "Visualize with: dot -Tpng " << output_path.string() << " -o graph.png" << std::endl;
+}
+
+inline void cmd_query(const std::string& question) {
+    if (!fs::exists(CONFIG_FILE)) {
+        std::cerr << "Error: Config file not found. Run 'docgen init'." << std::endl;
+        return;
+    }
+    
+    std::ifstream i(CONFIG_FILE);
+    json config;
+    i >> config;
+
+    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    if (!fs::exists(tree_path)) {
+        std::cerr << "Error: tree.json not found. Run 'docgen update' first." << std::endl;
+        return;
+    }
+    std::ifstream f(tree_path);
+    json tree_data;
+    if (f.peek() != std::ifstream::traits_type::eof()) {
+        f >> tree_data;
+    }
+
+    std::string context;
+    const size_t MAX_CONTEXT_CHARS = 32000; 
+
+    if (tree_data.contains("files") && tree_data["files"].is_array()) {
+        for (const auto& file : tree_data["files"]) {
+            if (context.size() >= MAX_CONTEXT_CHARS) break;
+            
+            std::string doc_path_str = file.value("doc_path", "");
+            if (doc_path_str.empty()) continue;
+            
+            fs::path p = doc_path_str;
+            if (fs::exists(p)) {
+                std::string content = read_file(p);
+                std::string path = file.value("path", "unknown");
+                if (context.size() + content.size() < MAX_CONTEXT_CHARS) {
+                    context += "File: " + path + "\n" + content + "\n\n";
+                }
+            }
+        }
+    }
+
+    if (context.empty()) {
+        std::cout << "No documentation found. Run 'docgen update' to generate docs." << std::endl;
+        return;
+    }
+
+    std::string prompt = "Context from project documentation:\n" + context + 
+                         "\n\nQuestion: " + question + 
+                         "\n\nAnswer the question based on the context provided.";
+
+    std::string mode = config.value("mode", "local");
+    std::string api_url;
+    std::string api_key;
+    std::string model_id;
+    std::string protocol;
+
+    if (mode == "cloud") {
+        api_url = config["cloud"]["api_url"];
+        api_key = config["cloud"]["api_key"];
+        model_id = config["cloud"]["model_id"];
+        protocol = config["cloud"].value("protocol", "simple");
+    } else {
+        api_url = config["local"]["api_url"];
+        model_id = config["local"]["model_id"];
+        protocol = "simple";
+    }
+
+    json body;
+    if (protocol == "openai") {
+        body = {{"model", model_id}, {"messages", {{{"role", "user"}, {"content", prompt}}}}};
+    } else if (protocol == "google") {
+        body = {{"contents", {{{"parts", {{{"text", prompt}}}}}}}};
+    } else {
+        body = {{"model", model_id}, {"prompt", prompt}, {"stream", false}};
+        if (mode == "local") {
+            body = {{"model", model_id}, {"prompt", prompt}, {"stream", false}};
+        } else {
+            body = {{"model", model_id}, {"message", prompt}};
+        }
+    }
+
+    std::vector<std::string> headers;
+    if (!api_key.empty() && api_key != "your_api_key") {
+        headers.push_back("Authorization: Bearer " + api_key);
+    }
+
+    std::cout << "Analyzing documentation..." << std::endl;
+    std::string response_str = exec_curl(api_url, headers, body);
+
+    try {
+        json response = json::parse(response_str);
+        std::string answer;
+        
+        if (response.contains("choices") && !response["choices"].empty()) {
+            answer = response["choices"][0]["message"]["content"];
+        } else if (response.contains("candidates") && !response["candidates"].empty()) {
+            answer = response["candidates"][0]["content"]["parts"][0]["text"];
+        } else if (response.contains("response")) {
+            answer = response["response"];
+        } else {
+            std::cerr << "Error: Unexpected API response format.\n" << response.dump(4) << std::endl;
+            return;
+        }
+        
+        std::cout << "\n" << answer << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error parsing response: " << e.what() << "\nRaw response: " << response_str << std::endl;
+    }
 }
 
 inline void cmd_upgrade() {

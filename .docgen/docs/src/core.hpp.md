@@ -15,6 +15,7 @@ The `docgen` tool is a command-line utility designed to automate the generation 
 - Sets up initial configuration files (`docgen_config.json`, `docgen.lock`, `tree.json`).
 - Creates a `docs` directory for generated documentation.
 - Initializes `docgen_config.json` with default settings for local and cloud AI models.
+- Added support for specifying the API protocol (`simple`, `openai`, `google`) in cloud mode.
 
 **Example Usage:**
 ```bash
@@ -78,6 +79,7 @@ docgen ignore tests/*.cpp
 - Handles rate limits and retries for cloud AI models.
 - Includes RAG (Retrieval-Augmented Generation) for improved context handling.
 - Added support for updating existing documentation based on code changes.
+- Enhanced error handling for API responses and added verbose mode for debugging.
 
 **Example Usage:**
 ```bash
@@ -172,6 +174,44 @@ docgen sponsor
 
 ---
 
+### `docgen graph`
+**Purpose:** Generates a dependency graph of the project.  
+**Behavior:**
+- Reads `tree.json` and creates a Graphviz DOT file (`graph.dot`) representing file dependencies.
+- Provides instructions for visualizing the graph using the `dot` tool.
+
+**Example Usage:**
+```bash
+docgen graph
+```
+
+---
+
+### `docgen query`
+**Purpose:** Queries the project documentation using natural language.  
+**Behavior:**
+- Uses AI to answer questions based on the generated documentation.
+- Aggregates context from all documentation files and sends it to the AI model.
+
+**Example Usage:**
+```bash
+docgen query "How do I initialize the project?"
+```
+
+---
+
+### `docgen auto`
+**Purpose:** Automatically updates documentation on file changes.  
+**Behavior:**
+- Monitors tracked files for changes and triggers `docgen update` when modifications are detected.
+
+**Example Usage:**
+```bash
+docgen auto
+```
+
+---
+
 ## Configuration
 The `docgen` tool uses a JSON configuration file (`docgen_config.json`) to manage settings for AI models and project behavior. Key configuration options include:
 - **Mode:** `local` or `cloud` (determines the AI model endpoint).
@@ -213,6 +253,9 @@ The tool integrates with AI models to generate documentation. It supports:
 6. **Check Status:** Use `docgen status` to view file changes.
 7. **Clean Up:** Use `docgen clean` to remove outdated documentation.
 8. **Validate:** Use `docgen validate` to ensure documentation consistency.
+9. **Visualize Dependencies:** Use `docgen graph` to generate a dependency graph.
+10. **Query Docs:** Use `docgen query` to ask questions about the documentation.
+11. **Auto-Update:** Use `docgen auto` to automatically update documentation on file changes.
 
 ---
 

@@ -1,5 +1,3 @@
-Here is the updated documentation with **only the necessary changes**, preserving the original structure and wording wherever possible.
-
 ```markdown
 # docgen-upgrade.sh
 
@@ -16,11 +14,11 @@ chmod +x docgen-upgrade.sh
 
 ## Behavior
 1. **OS Detection**:  
-   The script identifies the operating system using `uname -s`. It supports Linux and macOS, assigning the corresponding binary asset name (`docgen-linux` or `docgen-macos`). Unsupported OSes result in an error and script termination.
+   The script identifies the operating system using `uname -s`. It supports **Linux** and **macOS** (detected as "Darwin"), assigning the corresponding binary asset name (`docgen-linux` or `docgen-macos`). Unsupported OSes result in an error and script termination.
 
 2. **Download**:  
    The latest version of `docgen` is downloaded from the GitHub releases page using `curl`. The binary is saved to `/tmp/docgen_new` and made executable.  
-   The download URL now uses the pattern:  
+   The download URL uses the pattern:  
    `https://github.com/alonsovm44/docgen/releases/latest/download/<asset>`
 
 3. **Locate and Replace**:  
@@ -39,5 +37,3 @@ chmod +x docgen-upgrade.sh
 - `docgen` must be installed and accessible in the `PATH`.
 - Internet connectivity to access the GitHub releases URL.
 ```
-
-If you want, I can also generate a diff-style version showing exactly what changed.

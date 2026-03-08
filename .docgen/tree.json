@@ -11,7 +11,7 @@
                 "ctime"
             ],
             "doc_path": ".docgen/docs/src/core.hpp.md",
-            "hash": "d8b03896fe603dc2",
+            "hash": "b011c3dbd00dc51e",
             "path": "src/core.hpp",
             "summary": "The `docgen` tool is a command-line utility designed to automate the generation and maintenance of documentation for software projects. It leverages AI models to create comprehensive Markdown documentation for source code files, tracks changes, and manages project configuration."
         },
@@ -20,16 +20,16 @@
                 "core.hpp"
             ],
             "doc_path": ".docgen/docs/src/main.cpp.md",
-            "hash": "ba772ea53d2763b0",
+            "hash": "404967c2cbb2cfd7",
             "path": "src/main.cpp",
-            "summary": "Here is the updated documentation with **only the sections that changed**, preserving the existing structure and wording exactly where possible."
+            "summary": "Here is the updated documentation with **only the sections that changed**, preserving the existing structure and wording exactly where possible:"
         },
         {
             "dependencies": [],
             "doc_path": ".docgen/docs/CHANGELOG.md.md",
-            "hash": "bab66a3cb1fdc635",
+            "hash": "da47bec41b320126",
             "path": "CHANGELOG.md",
-            "summary": "Below is a polished, comprehensive Markdown documentation section based on the provided changelog. It focuses on purpose, usage, and behavior rather than restating the obvious."
+            "summary": "Here is the updated documentation, modified **only where the new code introduces changes**."
         },
         {
             "dependencies": [
@@ -50,9 +50,9 @@
         {
             "dependencies": [],
             "doc_path": ".docgen/docs/src/update.sh.md",
-            "hash": "51452ea105455c89",
+            "hash": "226523d3dd2e5b5c",
             "path": "src/update.sh",
-            "summary": "Here is the updated documentation with **only the necessary changes**, preserving the original structure and wording wherever possible."
+            "summary": "```markdown"
         },
         {
             "dependencies": [
@@ -82,5 +82,5 @@
             "summary": "Here’s the updated documentation reflecting the changes in the code while preserving the existing structure and content where possible:"
         }
     ],
-    "last_update": "2026-03-07T08:39:12Z"
+    "last_update": "2026-03-08T03:25:23Z"
 }
