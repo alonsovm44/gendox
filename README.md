@@ -11,14 +11,25 @@ Because you no longer have to bother writing docs yourself, just run `docgen upd
 
 *   **Docs-as-Code**: Generates Markdown documentation that lives right next to your source code.
 *   **Smart Incremental Builds**: Uses content hashing to only regenerate docs for modified files, saving time and API credits.
-*   **Context-Aware (RAG)**: Automatically analyzes `#include` dependencies to provide relevant context to the AI, ensuring accurate documentation for complex projects.
+*   **Context-Aware (RAG)**: Automatically analyzes dependencies to provide relevant context to the AI, ensuring accurate documentation for complex projects.
 *   **Flexible Backend**: 
     *   **Cloud**: Supports OpenAI, Google Gemini, and compatible APIs.
     *   **Local**: Works fully offline with Ollama (default).
 *   **Zero Dependencies**: Compiled as a single static binary.
 
 ## Getting started
-Run 
+## Quick Install
+
+### Windows (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.ps1 | iex
+```
+### Linux / Mac
+```bash
+curl -fsSL https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.sh | bash
+```
+
+After installation run
 ```bash
 docgen init
 ```
@@ -43,16 +54,6 @@ Style:
     -be concise
 ```
 
-## Quick Install
-
-### Windows (PowerShell)
-```powershell
-irm https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.ps1 | iex
-```
-### Linux / Mac
-```bash
-curl -fsSL https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.sh | bash
-```
 
 ## Other commands
 
