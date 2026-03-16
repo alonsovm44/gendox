@@ -1,0 +1,13 @@
+idea.md
+config.json
+glupe_cache
+.glupe_build.cache
+.glupe.lock
+glupe.log
+*.exe
+temp_build.cpp
+request_temp.json
+.vscode/
+build.bat
+.ideas/
+up.bat

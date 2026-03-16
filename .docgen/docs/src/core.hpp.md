@@ -16,6 +16,7 @@ The `docgen` tool is a command-line utility designed to automate the generation 
 - Creates a `docs` directory for generated documentation.
 - Initializes `docgen_config.json` with default settings for local and cloud AI models.
 - Added support for specifying the API protocol (`simple`, `openai`, `google`) in cloud mode.
+- Includes `ignore_hidden` setting in configuration to exclude hidden files/directories.
 
 **Example Usage:**
 ```bash
@@ -27,11 +28,12 @@ docgen init
 ### `docgen config`
 **Purpose:** Manages the configuration settings for the `docgen` tool.  
 **Behavior:**
-- Allows setting or viewing configuration keys (`mode`, `protocol`, `key`, `model`).
+- Allows setting or viewing configuration keys (`mode`, `protocol`, `key`, `model`, `ignore-hidden`).
 - Supports checking the connection to the AI model.
 - Updates specific configuration fields like `cloud.api_key`, `cloud.protocol`, and `model_id` for both local and cloud modes.
 - Includes enhanced error handling for API key issues and rate limits during connection checks.
 - Added support for updating the `protocol` used in cloud mode.
+- Added `ignore-hidden` option to exclude hidden files/directories.
 
 **Usage:**
 - **Set a configuration key:**  
@@ -42,6 +44,7 @@ docgen init
   ```bash
   docgen config mode cloud
   docgen config protocol openai
+  docgen config ignore-hidden true
   ```
 
 - **View current configuration:**  
@@ -80,6 +83,7 @@ docgen ignore tests/*.cpp
 - Includes RAG (Retrieval-Augmented Generation) for improved context handling.
 - Added support for updating existing documentation based on code changes.
 - Enhanced error handling for API responses and added verbose mode for debugging.
+- Includes style guidelines from the `Style:` section of `Docfile`.
 
 **Example Usage:**
 ```bash
@@ -220,6 +224,7 @@ The `docgen` tool uses a JSON configuration file (`docgen_config.json`) to manag
 - **Protocol:** Defines the API protocol (e.g., `simple`, `openai`, `google`).
 - **Cloud Settings:** Includes `api_url`, `api_key`, `model_id`, and `protocol`.
 - **Local Settings:** Includes `api_url` and `model_id`.
+- **Ignore Hidden:** Excludes hidden files/directories from tracking (`ignore_hidden`).
 
 ---
 
@@ -241,6 +246,7 @@ The tool integrates with AI models to generate documentation. It supports:
 - **Rate Limit Handling:** Retries requests with exponential backoff for cloud models.
 - **RAG (Retrieval-Augmented Generation):** Enhances context handling by including relevant code snippets.
 - **Protocol Support:** Added support for different API protocols (`simple`, `openai`, `google`).
+- **Style Guidelines:** Incorporates style rules from `Docfile` during documentation generation.
 
 ---
 

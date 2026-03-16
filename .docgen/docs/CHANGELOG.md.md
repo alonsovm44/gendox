@@ -1,5 +1,4 @@
-Here is the updated documentation, modified **only where the new code introduces changes**.  
-All structure and unchanged content remain intact.
+Here is the updated documentation, modified **only where the new code introduces changes**. The structure and unchanged content remain intact.
 
 ---
 
@@ -55,9 +54,9 @@ The update introduces **incremental rewriting**, allowing the system to modify o
 An issue that prevented the model key from being recognized has been resolved.  
 The fix ensures that authentication and model selection behave consistently across environments.
 
-### Windows Installer Stability (v0.0.1)
-The Windows installer previously stalled when initializing Ollama.  
-This update corrects the hang condition, ensuring that installation completes without manual intervention.
+### Installer Stability (v0.0.1 & v0.2.0)
+**v0.0.1**: The Windows installer previously stalled when initializing Ollama.  
+**v0.2.0**: General installer issues have been addressed, ensuring all installers work reliably across platforms.
 
 ### Polling Mechanism for Auto Mode (v0.2.0)
 The polling mechanism in **auto mode** has been improved for better efficiency and reliability.  
@@ -73,5 +72,3 @@ This ensures that queries are processed correctly, improving the accuracy and re
 - Do not use emojis.
 
 ---
-
-If you'd like, I can also generate a diff‑style view showing exactly what changed.

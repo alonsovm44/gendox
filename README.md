@@ -1,5 +1,10 @@
 # Docgen 
 
+![GitHub Release](https://img.shields.io/github/v/release/alonsovm44/docgen?color=blue&style=flat-square)
+![C++](https://img.shields.io/badge/C++-17-00599C?logo=c%2B%2B&logoColor=white&style=flat-square)
+![Ollama](https://img.shields.io/badge/Local_AI-Ollama-black?logo=ollama&style=flat-square)
+![License](https://img.shields.io/github/license/alonsovm44/docgen?style=flat-square)
+
 **Solve documentation hell for good.**
 
 Docgen is a lightweight, C++ CLI tool that automates software documentation using Large Language Models (LLMs). It treats documentation generation as a build step, tracking your source code and incrementally updating documentation only when files change.

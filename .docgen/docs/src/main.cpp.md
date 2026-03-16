@@ -1,4 +1,4 @@
-Here is the updated documentation with **only the sections that changed**, preserving the existing structure and wording exactly where possible:
+Here is the updated documentation with **only the sections that changed**, preserving the existing structure and wording exactly where possible and updating only what the new code requires.
 
 ---
 
@@ -6,17 +6,8 @@ Here is the updated documentation with **only the sections that changed**, prese
 
 ## Commands
 
-### Graph  
-*(No changes)*  
-**Purpose:** Generate a dependency graph of the project in DOT format.  
-**Usage:**  
-```bash
-docgen graph
-```  
-**Behavior:** Calls `cmd_graph()` to produce a DOT‑formatted dependency graph.
-
 ### Help  
-*(Updated to reflect new command list)*  
+*(Updated to reflect new command list — version number updated)*  
 **Purpose:** Display the help message with available commands.  
 **Usage:**  
 ```bash
@@ -52,17 +43,8 @@ docgen --help
   help       Display this help message
 ```
 
-### Get-Key  
-*(No changes)*  
-**Purpose:** Open a browser to retrieve an API key from `https://apifreellm.com`.  
-**Usage:**  
-```bash
-docgen get-key
-```  
-**Behavior:** Uses platform‑specific commands (`start`, `open`, or `xdg-open`) to open the URL.
-
 ### Version  
-*(New command)*  
+*(Updated version number)*  
 **Purpose:** Display the current version of docgen.  
 **Usage:**  
 ```bash
@@ -76,25 +58,8 @@ or
 ```bash
 docgen --version
 ```  
-**Behavior:** Prints the current version (e.g., `0.2.0`) and exits successfully.
+**Behavior:** Prints the current version (e.g., `0.2.2`) and exits successfully.
 
 ---
 
-**Additional Commands Added (Brief Overview):**  
-The following commands were added to the tool but are not detailed in the original documentation structure:  
-- `init`  
-- `config`  
-- `track`  
-- `ignore`  
-- `update`  
-- `auto`  
-- `status`  
-- `validate`  
-- `clean`  
-- `query`  
-- `summary`  
-- `upgrade`  
-- `reboot`  
-- `sponsor`  
-
-Let me know if you'd like me to expand on these new commands!
+If you'd like, I can also update the full documentation set or expand the descriptions of the additional commands.

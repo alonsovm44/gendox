@@ -11,7 +11,7 @@
                 "ctime"
             ],
             "doc_path": ".docgen/docs/src/core.hpp.md",
-            "hash": "b011c3dbd00dc51e",
+            "hash": "2d4d6aae0171dae1",
             "path": "src/core.hpp",
             "summary": "The `docgen` tool is a command-line utility designed to automate the generation and maintenance of documentation for software projects. It leverages AI models to create comprehensive Markdown documentation for source code files, tracks changes, and manages project configuration."
         },
@@ -20,16 +20,16 @@
                 "core.hpp"
             ],
             "doc_path": ".docgen/docs/src/main.cpp.md",
-            "hash": "404967c2cbb2cfd7",
+            "hash": "c4bd5355f0df5d2d",
             "path": "src/main.cpp",
-            "summary": "Here is the updated documentation with **only the sections that changed**, preserving the existing structure and wording exactly where possible:"
+            "summary": "Here is the updated documentation with **only the sections that changed**, preserving the existing structure and wording exactly where possible and updating only what the new code requires."
         },
         {
             "dependencies": [],
             "doc_path": ".docgen/docs/CHANGELOG.md.md",
-            "hash": "da47bec41b320126",
+            "hash": "d59f2bbd311d7882",
             "path": "CHANGELOG.md",
-            "summary": "Here is the updated documentation, modified **only where the new code introduces changes**."
+            "summary": "Here is the updated documentation, modified **only where the new code introduces changes**. The structure and unchanged content remain intact."
         },
         {
             "dependencies": [
@@ -80,7 +80,23 @@
             "hash": "86b8fe8d34bf26b7",
             "path": "src/utils.hpp",
             "summary": "Here’s the updated documentation reflecting the changes in the code while preserving the existing structure and content where possible:"
+        },
+        {
+            "dependencies": [],
+            "doc_path": ".docgen/docs/installer.ps1.md",
+            "hash": "29990faacaac39b2",
+            "path": "installer.ps1",
+            "summary": "This PowerShell script automates the setup and compilation of the `docgen` tool. It checks for prerequisites, installs missing dependencies, clones the source code if necessary, and compiles the source code using an available C++ compiler."
+        },
+        {
+            "dependencies": [
+                "manager."
+            ],
+            "doc_path": ".docgen/docs/installer.sh.md",
+            "hash": "c6c5bb65037b953e",
+            "path": "installer.sh",
+            "summary": "This script automates the setup and compilation of the `docgen` tool. It checks for prerequisites, installs missing dependencies (if allowed), and compiles the source code using an available C++ compiler."
         }
     ],
-    "last_update": "2026-03-08T03:25:23Z"
+    "last_update": "2026-03-15T06:06:01Z"
 }
