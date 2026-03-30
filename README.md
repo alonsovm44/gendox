@@ -4,9 +4,11 @@
 [![C++17](https://img.shields.io/badge/C++-17-00599C?logo=c%2B%2B&logoColor=white&style=flat-square)]()
 [![Local AI: Ollama](https://img.shields.io/badge/Local_AI-Ollama-black?logo=ollama&style=flat-square)]()
 [![License](https://img.shields.io/github/license/alonsovm44/docgen?style=flat-square)]()
-[![CI](https://img.shields.io/badge/CI-%20setup%20recommended-lightgrey?style=flat-square)]()  <!-- replace when CI exists -->
+[![AI Powered](https://img.shields.io/badge/AI-Powered-blue?style=flat-square)]()
 
-![Docgen Demo](assets/demo.gif)
+| Basic Workflow | Interactive Chat | Auto-Update |
+|:---:|:---:|:---:|
+| ![Docgen Demo](assets/demo.gif) | ![Docgen Chat Demo](assets/query-chat-demo.gif) | ![Docgen Auto Demo](assets/auto-demo.gif) |
 
 One-liner
 Docgen automatically keeps your C++ project docs accurate: store intent/spec next to source, run `docgen update` and only changed files get regenerated. Fast, auditable, and works locally with Ollama or in the cloud.
@@ -29,6 +31,8 @@ curl -fsSL -o ./docgen-installer.sh https://github.com/alonsovm44/docgen/release
 bash ./docgen-installer.sh
 ```
 
+
+
 2. Initialize a project:
 ```bash
 docgen init
@@ -36,16 +40,7 @@ docgen track main.cpp src/
 docgen update
 ```
 
-Or (experienced users who trust the release and want one-liners):
-```bash
-# Unix/macOS (use only when you trust the source)
-curl -fsSL https://github.com/alonsovm44/docgen/releases/latest/download/install.sh | bash
-# Windows (PowerShell)
-# Download installer.ps1, inspect and then run:
-# iwr <url> -OutFile installer.ps1; notepad installer.ps1; powershell -ExecutionPolicy Bypass -File installer.ps1
-```
-
-New interactive chat
+## New interactive chat
 You can now open an in-terminal chat that uses your project documentation as context:
 ```bash
 docgen query --chat
