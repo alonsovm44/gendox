@@ -1013,7 +1013,22 @@ inline void cmd_graph() {
     std::cout << "Visualize with: dot -Tpng " << output_path.string() << " -o graph.png" << std::endl;
 }
 
-inline void cmd_query(const std::string& question) {
+inline void cmd_query(const std::string& q) {
+    std::string question = trim(q);
+    bool chat_mode = false;
+    
+    if (question == "--chat") {
+        chat_mode = true;
+        question = "";
+    } else if (question.find("--chat ") == 0) {
+        chat_mode = true;
+        question = trim(question.substr(7));
+    } else if (question.find(" --chat") != std::string::npos) {
+        chat_mode = true;
+        question.erase(question.find(" --chat"), 7);
+        question = trim(question);
+    }
+
     if (!fs::exists(CONFIG_FILE)) {
         std::cerr << "Error: Config file not found. Run 'docgen init'." << std::endl;
         return;
@@ -1060,10 +1075,6 @@ inline void cmd_query(const std::string& question) {
         return;
     }
 
-    std::string prompt = "Context from project documentation:\n" + context + 
-                         "\n\nQuestion: " + question + 
-                         "\n\nAnswer the question based on the context provided.";
-
     std::string mode = config.value("mode", "local");
     std::string api_url;
     std::string api_key;
@@ -1081,47 +1092,85 @@ inline void cmd_query(const std::string& question) {
         protocol = "simple";
     }
 
-    json body;
+    json openai_messages = json::array();
+    std::string text_history = "Context from project documentation:\n" + context + "\n\nAnswer questions based on the context provided.\n\n";
+
     if (protocol == "openai") {
-        body = {{"model", model_id}, {"messages", {{{"role", "user"}, {"content", prompt}}}}};
-    } else if (protocol == "google") {
-        body = {{"contents", {{{"parts", {{{"text", prompt}}}}}}}};
-    } else {
-        body = {{"model", model_id}, {"prompt", prompt}, {"stream", false}};
-        if (mode == "local") {
-            body = {{"model", model_id}, {"prompt", prompt}, {"stream", false}};
-        } else {
-            body = {{"model", model_id}, {"message", prompt}};
-        }
+        openai_messages.push_back({{"role", "system"}, {"content", "You are a helpful coding assistant. Answer the user's questions based on the following context:\n" + context}});
     }
 
-    std::vector<std::string> headers;
-    if (!api_key.empty() && api_key != "your_api_key") {
-        headers.push_back("Authorization: Bearer " + api_key);
+    if (chat_mode) {
+        std::cout << "Entering chat mode. Type 'exit' or 'quit' to end.\n";
     }
 
-    std::cout << "Analyzing documentation..." << std::endl;
-    std::string response_str = exec_curl(api_url, headers, body);
-
-    try {
-        json response = json::parse(response_str);
-        std::string answer;
-        
-        if (response.contains("choices") && !response["choices"].empty()) {
-            answer = response["choices"][0]["message"]["content"];
-        } else if (response.contains("candidates") && !response["candidates"].empty()) {
-            answer = response["candidates"][0]["content"]["parts"][0]["text"];
-        } else if (response.contains("response")) {
-            answer = response["response"];
-        } else {
-            std::cerr << "Error: Unexpected API response format.\n" << response.dump(4) << std::endl;
-            return;
+    while (true) {
+        if (chat_mode && question.empty()) {
+            std::cout << "\n(docgen) > ";
+            std::getline(std::cin, question);
+            question = trim(question);
+            if (question == "exit" || question == "quit") {
+                break;
+            }
+            if (question.empty()) continue;
         }
-        
-        std::cout << "\n" << answer << std::endl;
 
-    } catch (const std::exception& e) {
-        std::cerr << "Error parsing response: " << e.what() << "\nRaw response: " << response_str << std::endl;
+        json body;
+        if (protocol == "openai") {
+            openai_messages.push_back({{"role", "user"}, {"content", question}});
+            body = {{"model", model_id}, {"messages", openai_messages}};
+        } else if (protocol == "google") {
+            text_history += "Question: " + question + "\nAnswer: ";
+            body = {{"contents", {{{"parts", {{{"text", text_history}}}}}}}};
+        } else {
+            text_history += "Question: " + question + "\nAnswer: ";
+            if (mode == "local") {
+                body = {{"model", model_id}, {"prompt", text_history}, {"stream", false}};
+            } else {
+                body = {{"model", model_id}, {"message", text_history}};
+            }
+        }
+
+        std::vector<std::string> headers;
+        if (!api_key.empty() && api_key != "your_api_key") {
+            headers.push_back("Authorization: Bearer " + api_key);
+        }
+
+        std::cout << "Analyzing documentation..." << std::endl;
+        std::string response_str = exec_curl(api_url, headers, body);
+
+        try {
+            json response = json::parse(response_str);
+            std::string answer;
+            
+            if (response.contains("choices") && !response["choices"].empty()) {
+                answer = response["choices"][0]["message"]["content"];
+            } else if (response.contains("candidates") && !response["candidates"].empty()) {
+                answer = response["candidates"][0]["content"]["parts"][0]["text"];
+            } else if (response.contains("response")) {
+                answer = response["response"];
+            } else {
+                std::cerr << "Error: Unexpected API response format.\n" << response.dump(4) << std::endl;
+                if (!chat_mode) return;
+                question = "";
+                continue;
+            }
+            
+            std::cout << "\n" << answer << std::endl;
+
+            if (protocol == "openai") {
+                openai_messages.push_back({{"role", "assistant"}, {"content", answer}});
+            } else {
+                text_history += answer + "\n\n";
+            }
+
+        } catch (const std::exception& e) {
+            std::cerr << "Error parsing response: " << e.what() << "\nRaw response: " << response_str << std::endl;
+        }
+
+        if (!chat_mode) {
+            break;
+        }
+        question = ""; // Reset for next iteration
     }
 }
 

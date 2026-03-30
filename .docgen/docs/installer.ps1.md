@@ -1,53 +1,52 @@
 # docgen Setup Script Documentation
 
 ## Purpose
-This PowerShell script automates the setup and compilation of the `docgen` tool. It checks for prerequisites, installs missing dependencies, downloads the source code if necessary, and compiles the source code using an available C++ compiler.
+This PowerShell script automates the installation of the `docgen` tool, preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the platform, it falls back to downloading the source code and provides build instructions.
 
 ## Usage
-Run the script in a PowerShell environment with administrative privileges if installing dependencies like Ollama. The script handles the following tasks:
+Run the script in a PowerShell environment. It handles the following tasks:
 
-1. **Prerequisite Check**: Verifies the presence of `curl` and `ollama`.
-2. **Source Code Retrieval**: Downloads the `docgen` repository if the source code is not found locally.
-3. **Dependency Installation**: Prompts to install Ollama and a C++ compiler (MinGW) if they're missing.
-4. **Compilation**: Compiles `docgen` using either `g++`, `clang++`, or `MSVC` (cl) if available.
+1. **Release Asset Download**: Queries GitHub Releases for a prebuilt asset matching the OS and architecture.
+2. **Installation**: Downloads and installs the prebuilt asset or provides instructions for building from source if no prebuilt asset is available.
 
 ## Behavior
 
-### Prerequisite Check
-- **curl**: Required for API requests. If missing, a warning is displayed, but the script continues.
-- **ollama**: If missing, the script prompts the user to install it. If the user agrees (`y`), it downloads and runs the Ollama installer.
+### Release Asset Download
+- **GitHub API Query**: Queries the GitHub API for the latest release of the `docgen` repository.
+- **Asset Selection**: Prefers assets matching the OS (`windows`) and architecture (`x86_64` or `x86`). If no exact match is found, it falls back to the first Windows asset.
 
-### Source Code Retrieval
-- If `src/main.cpp` is not found, the script downloads and extracts the `docgen` repository archive from GitHub into a temporary directory.
+### Installation
+- **Prebuilt Asset**: If a prebuilt asset is found, it is downloaded, extracted (if necessary), and the executable is copied to the installation directory (`$InstallDir`).
+- **Source Code Fallback**: If no prebuilt asset is available, the script downloads the source code archive and provides instructions for building from source.
 
-### Compiler Installation
-- If no C++ compiler is found, the script downloads and installs a portable version of MinGW (w64devkit) and adds it to the system's PATH.
-
-### Compilation
-- **Compiler Detection**: Automatically detects and uses `g++`, `clang++`, or `MSVC` (cl) for compilation, with a preference for `g++`.
-- **Compilation Flags**:
-  - **g++/clang++**: Uses `-std=c++17` for C++17 standard compliance.
-  - **MSVC**: Uses `/EHsc` (C++ exceptions) and `/std:c++17` for C++17 standard compliance.
-- **Output**: Produces `docgen.exe` and installs it in the `%LOCALAPPDATA%\docgen\bin` directory, adding it to the user's PATH.
+### Installation Directory
+- The installation directory defaults to `%USERPROFILE%\bin` but can be customized via the `$InstallDir` parameter.
+- Ensures the installation directory exists and informs the user if it is not on the current PATH.
 
 ### Error Handling
-- Stops execution on critical errors (e.g., no compiler found after installation).
-- Exits with a non-zero status code if compilation fails.
+- Stops execution on critical errors (e.g., failed API query or download) and exits with a non-zero status code.
 
 ## Example Workflow
 1. Run the script.
-2. If the source code is not found locally, it is downloaded from GitHub.
-3. If `ollama` is missing, choose `y` to install it.
-4. If no compiler is found, MinGW is installed.
-5. The script compiles `docgen` using the detected compiler.
-6. Upon successful compilation, `docgen` is installed and added to the user's PATH.
+2. If a prebuilt asset is available, it is downloaded and installed.
+3. If no prebuilt asset is available, the source code is downloaded, and build instructions are provided.
 
 ## Requirements
 - PowerShell 5.1 or later.
-- Internet connection (for downloading dependencies and source code).
-- Administrative privileges (for installing Ollama and modifying the PATH).
+- Internet connection (for downloading assets and source code).
 
 ## Notes
 - The script cleans up temporary directories after completion.
-- Ensure an active internet connection for downloading dependencies and source code.
-- The compiled `docgen.exe` is installed in `%LOCALAPPDATA%\docgen\bin`.
+- Ensure an active internet connection for downloading assets and source code.
+- If the installation directory is not on the PATH, add it manually or re-open the terminal after installation.
+
+## Parameters
+- **Owner**: GitHub repository owner (default: "alonsovm44").
+- **Repo**: GitHub repository name (default: "docgen").
+- **InstallDir**: Installation directory (default: `%USERPROFILE%\bin`).
+
+## Changes from Previous Version
+- Removed prerequisite checks for `curl`, `ollama`, and C++ compilers.
+- Removed automatic compilation from source.
+- Added preference for prebuilt release assets.
+- Simplified installation process focusing on prebuilt assets and fallback to source code with manual build instructions.

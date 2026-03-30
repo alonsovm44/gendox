@@ -1,73 +1,69 @@
 # docgen Build Script Documentation
 
 ## Purpose
-This script automates the setup and compilation of the `docgen` tool. It checks for prerequisites, installs missing dependencies (if allowed), and compiles the source code using an available C++ compiler.
+This script automates the installation of the `docgen` tool by preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the detected OS/architecture, it falls back to downloading the source code archive and provides build instructions.
 
 ## Behavior
 
-### Prerequisites Check
-1. **curl**:  
-   - Verifies if `curl` is installed.  
-   - Exits with an error if missing, as `docgen` requires `curl` for API requests and the script needs it to download Ollama.  
+### OS/Architecture Detection
+- Detects the operating system and architecture using `uname`.
+- Maps detected values to supported targets (e.g., `linux-x86_64`, `macos-arm64`).
 
-2. **tar**:  
-   - Checks if `tar` is installed if `src/main.cpp` is not found locally.  
-   - Exits with an error if `tar` is missing, as it is required to extract the downloaded source code archive.  
+### GitHub Release Query
+- Queries the GitHub API for the latest release of the `docgen` repository.
+- Uses `curl`, `wget`, or `python3` to fetch release metadata.
 
-3. **Ollama**:  
-   - Checks for the presence of `ollama`.  
-   - If missing, prompts the user to install it via an interactive prompt.  
-   - Installation is performed using the official Ollama installation script if the user consents.  
+### Asset Selection
+- Searches for a prebuilt asset matching the detected OS/architecture.
+- Prefers exact matches (e.g., `docgen-linux-x86_64.tar.gz`) and falls back to shorter matches or any asset containing the OS name.
 
-### Source Code Retrieval
-- If `src/main.cpp` is not found locally, the script downloads and extracts the `docgen` repository archive from GitHub into a temporary directory.  
+### Download and Verification
+1. **Download**:  
+   - Downloads the selected asset using `curl`, `wget`, or `python3`.  
+2. **Checksum Verification**:  
+   - If a checksum asset is available, downloads and verifies the integrity of the downloaded file using `sha256sum` or `shasum`.  
 
-### Compilation
-1. **Compiler Detection and Installation**:  
-   - Searches for `g++` or `clang++` in the system.  
-   - If no compiler is found, attempts to install `g++` using the system's package manager.  
-   - Exits with an error if no compiler can be installed.  
+### Extraction and Installation
+- Extracts the downloaded archive (supports `.tar.gz` and `.zip`).  
+- Locates the `docgen` binary within the extracted files.  
+- Installs the binary to `/usr/local/bin` or a user-specified directory (`LOCAL_INSTALL`).  
+- Ensures the binary is executable.  
 
-2. **Build Process**:  
-   - Compiles `src/main.cpp` with C++17 standard support.  
-   - Outputs the executable as `docgen`.  
-
-3. **Installation**:  
-   - Moves the compiled `docgen` executable to `$HOME/.local/bin`.  
-   - Advises the user to add this directory to their `PATH` if it's not already included.  
-
-4. **Cleanup**:  
-   - If the repository was downloaded, the temporary directory is deleted after compilation.  
+### Fallback to Source Code
+- If no prebuilt asset is found, downloads the source code archive from the main branch.  
+- Provides detailed instructions for building from source, including extraction, CMake, and compilation steps.  
 
 ## Usage
 1. **Run the Script**:  
    Execute the script in a terminal:  
    ```bash
-   ./build.sh
+   ./install.sh
    ```
 
-2. **Interactive Prompts**:  
-   - If `ollama` is missing, respond with `y` or `n` to install or skip installation.  
+2. **Custom Installation Directory**:  
+   Override the default installation directory using:  
+   ```bash
+   LOCAL_INSTALL=~/.local/bin ./install.sh
+   ```
 
-3. **Post-Build**:  
-   - Upon successful compilation, run the tool using:  
+3. **Post-Installation**:  
+   - After successful installation, run the tool using:  
      ```bash
-     docgen
+     docgen --help
      ```
 
 ## Error Handling
 - Exits with a non-zero status if:  
-  - `curl` or `tar` is not found.  
-  - No C++ compiler is found and cannot be installed.  
-  - The build process fails.  
+  - No downloader (`curl`, `wget`, or `python3`) is available.  
+  - No prebuilt asset or source code can be downloaded.  
+  - The binary cannot be located in the extracted archive.  
 
 ## Dependencies
-- **curl**: Required for API requests and downloading Ollama.  
-- **tar**: Required if `src/main.cpp` is not found locally.  
-- **Ollama**: Optional but recommended for full functionality.  
-- **g++ or clang++**: Required for compiling the source code.  
+- **Downloader**: `curl`, `wget`, or `python3` (required for downloading assets).  
+- **Extraction Tools**: `tar` (for `.tar.gz`), `unzip` (for `.zip`).  
+- **Checksum Verification**: `sha256sum` or `shasum` (optional but recommended).  
 
 ## Notes
-- If `src/main.cpp` is not present, the script downloads and extracts the repository from GitHub.  
-- The compiled `docgen` executable is installed in `$HOME/.local/bin`.  
-- Ensure appropriate permissions for executing the script and installing dependencies.
+- The script does not require `git` for installation.  
+- If no prebuilt asset is available for your platform, consider opening an issue in the repository to request support.  
+- Building from source requires `cmake`, `make`, and a C++ toolchain. The script does not automate the build process by default but provides clear instructions.

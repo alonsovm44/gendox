@@ -84,6 +84,7 @@ docgen ignore tests/*.cpp
 - Added support for updating existing documentation based on code changes.
 - Enhanced error handling for API responses and added verbose mode for debugging.
 - Includes style guidelines from the `Style:` section of `Docfile`.
+- **New:** Preserves existing documentation structure when updating, only modifying changed sections.
 
 **Example Usage:**
 ```bash
@@ -247,6 +248,7 @@ The tool integrates with AI models to generate documentation. It supports:
 - **RAG (Retrieval-Augmented Generation):** Enhances context handling by including relevant code snippets.
 - **Protocol Support:** Added support for different API protocols (`simple`, `openai`, `google`).
 - **Style Guidelines:** Incorporates style rules from `Docfile` during documentation generation.
+- **New:** Preserves existing documentation structure when updating, only modifying changed sections.
 
 ---
 

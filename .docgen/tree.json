@@ -11,7 +11,7 @@
                 "ctime"
             ],
             "doc_path": ".docgen/docs/src/core.hpp.md",
-            "hash": "2d4d6aae0171dae1",
+            "hash": "93fdae079a9b70cf",
             "path": "src/core.hpp",
             "summary": "The `docgen` tool is a command-line utility designed to automate the generation and maintenance of documentation for software projects. It leverages AI models to create comprehensive Markdown documentation for source code files, tracks changes, and manages project configuration."
         },
@@ -84,19 +84,22 @@
         {
             "dependencies": [],
             "doc_path": ".docgen/docs/installer.ps1.md",
-            "hash": "29990faacaac39b2",
+            "hash": "79500b89a24679f2",
             "path": "installer.ps1",
-            "summary": "This PowerShell script automates the setup and compilation of the `docgen` tool. It checks for prerequisites, installs missing dependencies, clones the source code if necessary, and compiles the source code using an available C++ compiler."
+            "summary": "This PowerShell script automates the installation of the `docgen` tool, preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the platform, it falls back to downloading the source code and provides build instructions."
         },
         {
             "dependencies": [
-                "manager."
+                "sys",
+                "urllib.request",
+                "json",
+                "json"
             ],
             "doc_path": ".docgen/docs/installer.sh.md",
-            "hash": "c6c5bb65037b953e",
+            "hash": "686e6e60f0421e4d",
             "path": "installer.sh",
-            "summary": "This script automates the setup and compilation of the `docgen` tool. It checks for prerequisites, installs missing dependencies (if allowed), and compiles the source code using an available C++ compiler."
+            "summary": "This script automates the installation of the `docgen` tool by preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the detected OS/architecture, it falls back to downloading the source code archive and provides build instructions."
         }
     ],
-    "last_update": "2026-03-15T06:06:01Z"
+    "last_update": "2026-03-30T23:01:06Z"
 }
