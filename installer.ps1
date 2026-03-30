@@ -1,109 +1,98 @@
-$ErrorActionPreference = "Stop"
+<#
+Foolproof PowerShell installer for Docgen (no git required)
+- prefers prebuilt release assets from GitHub Releases
+- falls back to source archive download and prints build instructions
+- uses Invoke-WebRequest / PowerShell webclient behaviour
+#>
 
-Write-Host "Checking for prerequisites..."
+param(
+  [string]$Owner = "alonsovm44",
+  [string]$Repo  = "docgen",
+  [string]$InstallDir = "$env:USERPROFILE\\bin"  # user-local default
+)
 
-if (-not (Get-Command curl -ErrorAction SilentlyContinue)) {
-    Write-Warning "curl not found. docgen requires curl to make API requests."
+function Write-Info { param($m) Write-Host "[INFO] $m" }
+function Write-ErrorExit { param($m) Write-Host "[ERROR] $m"; exit 1 }
+
+# Ensure install dir exists and is on PATH
+if (-not (Test-Path -Path $InstallDir)) {
+  New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+}
+if (-not ($Env:PATH -split ";" | ForEach-Object { $_.Trim() } | Where-Object { $_ -eq $InstallDir })) {
+  Write-Info "Note: $InstallDir is not on PATH for current session. You can add it to PATH manually or re-open terminal after install."
 }
 
-$clonedDir = $null
-if (-not (Test-Path "src/main.cpp")) {
-    Write-Host "Source code not found locally. Downloading repository archive..."
-    $clonedDir = Join-Path $env:TEMP "docgen-source-$(Get-Random)"
-    New-Item -ItemType Directory -Path $clonedDir | Out-Null
-    $zipPath = Join-Path $clonedDir "docgen.zip"
-    Invoke-WebRequest -Uri "https://github.com/alonsovm44/docgen/archive/refs/heads/master.zip" -OutFile $zipPath
-    Expand-Archive -Path $zipPath -DestinationPath $clonedDir -Force
-    $extractedFolder = Get-ChildItem -Path $clonedDir -Directory | Where-Object Name -like "docgen-*" | Select-Object -First 1
-    Set-Location $extractedFolder.FullName
+$api = "https://api.github.com/repos/$Owner/$Repo/releases/latest"
+$tmp = New-Item -ItemType Directory -Force -Path ([IO.Path]::Combine($env:TEMP, "$Repo-install-" + [Guid]::NewGuid()))
+
+Write-Info "Querying GitHub releases..."
+try {
+  $resp = Invoke-RestMethod -Uri $api -UseBasicParsing -ErrorAction Stop
+} catch {
+  Write-ErrorExit "Failed to query GitHub API: $_"
 }
 
-if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
-    $install = Read-Host "Ollama not found. Do you want to install it? (y/n)"
-    if ($install -eq 'y') {
-        Write-Host "Downloading OllamaSetup.exe..."
-        $installerPath = "$env:TEMP\OllamaSetup.exe"
-        Invoke-WebRequest -Uri "https://ollama.com/download/OllamaSetup.exe" -OutFile $installerPath
-        Write-Host "Running installer..."
-        Start-Process -FilePath $installerPath -Wait
+# Prefer asset matching OS/arch name
+$os = if ($IsWindows) { "windows" } else { "unknown" }
+$arch = if ([Environment]::Is64BitOperatingSystem) { "x86_64" } else { "x86" }
+$target_names = @("${os}-${arch}.zip","${Repo}-${os}-${arch}.zip","${os}-${arch}.zip")
+$asset = $null
+foreach ($n in $target_names) {
+  $asset = $resp.assets | Where-Object { $_.name -eq $n }
+  if ($asset) { break }
+}
+if (-not $asset) {
+  # fallback: first windows asset
+  $asset = $resp.assets | Where-Object { $_.name -match "windows" } | Select-Object -First 1
+}
+
+if ($asset) {
+  $url = $asset.browser_download_url
+  Write-Info "Found release asset: $($asset.name). Downloading..."
+  $out = Join-Path $tmp $asset.name
+  try {
+    Invoke-WebRequest -Uri $url -OutFile $out -UseBasicParsing -ErrorAction Stop
+  } catch {
+    Write-ErrorExit "Failed to download asset: $_"
+  }
+
+  # If it's a zip, extract
+  if ($out -like "*.zip") {
+    Write-Info "Extracting $out..."
+    Expand-Archive -Path $out -DestinationPath $tmp -Force
+    # look for executable
+    $exe = Get-ChildItem -Path $tmp -Recurse -File | Where-Object { $_.Name -match "\.exe$" } | Select-Object -First 1
+    if (-not $exe) {
+      Write-ErrorExit "No executable found in archive. Contents: $(Get-ChildItem -Path $tmp -Recurse -File | Select-Object -First 20 | ForEach-Object { $_.FullName } )"
     }
+    $dest = Join-Path $InstallDir $exe.Name
+    Copy-Item -Path $exe.FullName -Destination $dest -Force
+    Write-Info "Installed $($exe.Name) to $InstallDir"
+    Write-Info "If $InstallDir is not on PATH, add it or move the binary to a folder that is."
+    exit 0
+  } else {
+    Write-Info "Downloaded asset to $out. Please extract and move the binary to $InstallDir."
+    exit 0
+  }
 }
 
-Write-Host "Compiling docgen..."
-
-$compiler = $null
-
-if (Get-Command g++ -ErrorAction SilentlyContinue) {
-    $compiler = "g++"
-} elseif (Get-Command clang++ -ErrorAction SilentlyContinue) {
-    $compiler = "clang++"
-} elseif (Get-Command cl -ErrorAction SilentlyContinue) {
-    $compiler = "cl"
-} else {
-    Write-Host "No C++ compiler found. Installing MinGW (w64devkit)..."
-    
-    $zipPath = "$env:TEMP\mingw.zip"
-    $installDir = "$env:LOCALAPPDATA\docgen-mingw"
-    
-    Write-Host "Downloading portable MinGW..."
-    Invoke-WebRequest -Uri "https://github.com/skeeto/w64devkit/releases/download/v1.22.0/w64devkit-1.22.0.zip" -OutFile $zipPath
-    
-    Write-Host "Extracting MinGW to $installDir (this may take a minute)..."
-    if (Test-Path $installDir) { Remove-Item -Recurse -Force $installDir }
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($zipPath, $installDir)
-    
-    $mingwPath = "$installDir\w64devkit\bin"
-    
-    Write-Host "Setting g++ to PATH..."
-    $env:PATH += ";$mingwPath"
-    
-    $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
-    if ($userPath -notmatch [regex]::Escape($mingwPath)) {
-        [System.Environment]::SetEnvironmentVariable("Path", "$userPath;$mingwPath", "User")
-    }
-    
-    if (Get-Command g++ -ErrorAction SilentlyContinue) {
-        $compiler = "g++"
-    } else {
-        Write-Error "Failed to install or locate g++ after attempting to install MinGW."
-        exit 1
-    }
+# fallback: download source tarball
+$src = "https://github.com/${Owner}/${Repo}/archive/refs/heads/main.zip"
+$outsrc = Join-Path $tmp "source.zip"
+Write-Info "No prebuilt release asset found for your platform. Downloading source archive as a fallback..."
+try {
+  Invoke-WebRequest -Uri $src -OutFile $outsrc -UseBasicParsing -ErrorAction Stop
+} catch {
+  Write-ErrorExit "Failed to download source archive: $_"
 }
-
-if ($compiler -eq "g++") {
-    Write-Host "Using g++..."
-    g++ -std=c++17 -o docgen.exe src/main.cpp
-} elseif ($compiler -eq "clang++") {
-    Write-Host "Using clang++..."
-    clang++ -std=c++17 -o docgen.exe src/main.cpp
-} elseif ($compiler -eq "cl") {
-    Write-Host "Using MSVC (cl)..."
-    # /EHsc: Enable C++ exceptions
-    # /std:c++17: Use C++17 standard
-    # /Fe:docgen.exe: Output executable name
-    cl /EHsc /std:c++17 /Fe:docgen.exe src/main.cpp
-}
-
-if (Test-Path docgen.exe) {
-    $installDir = "$env:LOCALAPPDATA\docgen\bin"
-    if (-not (Test-Path $installDir)) { New-Item -ItemType Directory -Path $installDir | Out-Null }
-    Move-Item -Path docgen.exe -Destination "$installDir\docgen.exe" -Force
-    
-    Write-Host "Adding docgen to PATH..."
-    $env:PATH += ";$installDir"
-    
-    $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
-    if ($userPath -notmatch [regex]::Escape($installDir)) {
-        [System.Environment]::SetEnvironmentVariable("Path", "$userPath;$installDir", "User")
-    }
-    Write-Host "Build complete. 'docgen' was installed to $installDir. Run 'docgen' to start."
-} else {
-    Write-Error "Build failed."
-    exit 1
-}
-
-if ($clonedDir) {
-    Set-Location $env:USERPROFILE
-    Remove-Item -Recurse -Force $clonedDir -ErrorAction SilentlyContinue
-}
+Write-Host ""
+Write-Host "Source archive downloaded to: $outsrc"
+Write-Host "Building from source on Windows typically requires visual studio / msbuild / cmake. The installer will not attempt to build automatically."
+Write-Host ""
+Write-Host "Suggested steps:"
+Write-Host "  1) Extract the zip: Expand-Archive -Path $outsrc -DestinationPath $tmp"
+Write-Host "  2) Open the project in Visual Studio or follow the repo README build instructions."
+Write-Host "  3) After building, copy the resulting binary to $InstallDir"
+Write-Host ""
+Write-Host "Tip: request prebuilt Windows release assets in the repo to enable one-step installs."
+exit 0
