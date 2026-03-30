@@ -79,6 +79,9 @@ Common commands (copy-paste)
 - Initialize project:
   docgen init
 
+- Watch for changes, update docs in real time as you work:
+  docgen auto
+
 - Track files/directories:
   docgen track <path>
 
@@ -99,9 +102,6 @@ Common commands (copy-paste)
 
 - Clean deleted/untracked docs:
   docgen clean
-
-- Upgrade docgen (fetch latest release):
-  docgen upgrade
 
 - Reset docgen repo (asks confirmation):
   docgen reboot
