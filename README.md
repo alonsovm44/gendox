@@ -10,35 +10,34 @@
 |:---:|:---:|:---:|
 | ![Docgen Demo](assets/demo.gif) | ![Docgen Chat Demo](assets/querydemo.gif) | ![Docgen Auto Demo](assets/auto.gif) |
 
-One-liner
-Docgen automatically keeps your C++ project docs accurate: store intent/spec next to source, run `docgen update` and only changed files get regenerated. Fast, auditable, and works locally with Ollama or in the cloud.
+Docgen automatically keeps your project docs accurate: store intent/spec next to source, run `docgen update` and only changed files get regenerated. Fast, auditable, and works locally with Ollama or in the cloud.
 
-Why it matters
-- Documentation bitrots fast. Docgen treats docs like build artifacts: incremental, reproducible, and verifiable.
-- Keep human-readable intent in the repo; generate the implementation docs from those intents with LLM help without manual bookkeeping.
-- Works offline with local models (recommended) and supports cloud backends for CI.
+## Why it matters TO YOU NOW
+Documentation bitrots fast and it is a pain to maintain, you update it and after two hours of work the docs are a lie. You don't have to deal with that anymore. Just open a terminal on your repo and run `docgen auto` and docs will update in real time as you work.
 
-Try it now (safe copy-paste)
-Note: avoid piping unknown remote scripts into a shell. Prefer downloading and inspecting installer scripts or use prebuilt release assets.
+## The worklflow
+
+Initialize a project:
+```bash
+docgen init #This will create a .docgen docs repo and your Docfile
+docgen track main.cpp src/ env/ utils.hpp ...
+docgen update # this updates tracked files
+```
+That's it. Docs are updated.
+
+## Try it now (safe copy-paste)
+> Note: I get that you may be uncomfortable with piping unknown remote scripts into a shell, you can audit the installer youself and see it is safe. 
 
 Quick (recommended):
 1. Download installer, inspect, run:
 ```bash
 # Download
-curl -fsSL -o ./docgen-installer.sh https://github.com/alonsovm44/docgen/releases/latest/download/install.sh
+curl -fsSL -o ./docgen-installer.sh https://github.com/alonsovm44/docgen/releases/latest/download/installer.sh
 # Inspect: less ./docgen-installer.sh
 # Then run:
 bash ./docgen-installer.sh
 ```
 
-
-
-2. Initialize a project:
-```bash
-docgen init
-docgen track main.cpp src/
-docgen update
-```
 
 ## New interactive chat
 You can now open an in-terminal chat that uses your project documentation as context:
