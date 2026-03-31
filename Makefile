@@ -1,7 +1,7 @@
 CXX = g++
 CC = gcc
 CXXFLAGS = -std=c++17 -Wall -Wextra -I./tree-sitter/lib/include -O2
-CFLAGS =  -I./tree-sitter/lib/include -O2
+CFLAGS =  -I./tree-sitter/lib/include -O2 -DTS_NO_UTF8PROC
 
 # Tree-sitter core
 TS_DIR = tree-sitter

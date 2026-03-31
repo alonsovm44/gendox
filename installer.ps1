@@ -40,13 +40,17 @@ try {
 function Build-FromSource {
     Write-Host "Checking build dependencies..."
     
-    $hasGpp = Get-Command "g++" -ErrorAction SilentlyContinue
-    $hasClang = Get-Command "clang++" -ErrorAction SilentlyContinue
-    if (-not $hasGpp -and -not $hasClang) {
+    $cpp_compiler = if (Get-Command "g++" -ErrorAction SilentlyContinue) { "g++" } elseif (Get-Command "clang++" -ErrorAction SilentlyContinue) { "clang++" } else { $null }
+    $c_compiler = if (Get-Command "gcc" -ErrorAction SilentlyContinue) { "gcc" } elseif (Get-Command "clang" -ErrorAction SilentlyContinue) { "clang" } else { $null }
+
+    if (-not $cpp_compiler) {
         Write-Error "C++ compiler not found. Please install MinGW-w64 or Clang, and ensure it is in your PATH."
         exit 1
     }
-    $compiler = if ($hasGpp) { "g++" } else { "clang++" }
+    if (-not $c_compiler) {
+        Write-Error "C compiler (gcc or clang) not found. Please install MinGW-w64 or Clang, and ensure it is in your PATH."
+        exit 1
+    }
 
     $isLocal = ((Test-Path "src\main.cpp") -and (Test-Path "Makefile"))
     $TmpDir = $null
@@ -76,7 +80,9 @@ function Build-FromSource {
 
     Write-Host "Compiling docgen and all tree-sitter languages..."
     $includes = @("-I.", "-Itree-sitter/lib/include")
-    $sources = @("src/main.cpp", "tree-sitter/lib/src/lib.c")
+    $c_sources = @("tree-sitter/lib/src/lib.c")
+    $cpp_sources = @("src/main.cpp")
+    $object_files = @()
     
     $langDirs = @(
         "tree-sitter-c", "tree-sitter-cpp", "tree-sitter-python", 
@@ -86,13 +92,43 @@ function Build-FromSource {
 
     foreach ($dir in $langDirs) {
         $includes += "-I$dir/src"
-        if (Test-Path "$dir/src/parser.c") { $sources += "$dir/src/parser.c" }
-        if (Test-Path "$dir/src/scanner.c") { $sources += "$dir/src/scanner.c" }
-        if (Test-Path "$dir/src/scanner.cc") { $sources += "$dir/src/scanner.cc" }
+        if (Test-Path "$dir/src/parser.c") { $c_sources += "$dir/src/parser.c" }
+        if (Test-Path "$dir/src/scanner.c") { $c_sources += "$dir/src/scanner.c" }
+        if (Test-Path "$dir/src/scanner.cc") { $cpp_sources += "$dir/src/scanner.cc" }
     }
 
-    $buildArgs = @("-std=c++17", "-Wall", "-Wextra", "-O2") + $includes + $sources + @("-o", "docgen.exe")
-    $process = Start-Process -FilePath $compiler -ArgumentList $buildArgs -NoNewWindow -Wait -PassThru
+    # Compile C files
+    $c_flags = @("-O2", "-DTS_NO_UTF8PROC")
+    foreach ($source in $c_sources) {
+        $obj_file = [System.IO.Path]::ChangeExtension($source, ".o")
+        $object_files += $obj_file
+        $source_dir = [System.IO.Path]::GetDirectoryName($source)
+        $buildArgs = $c_flags + $includes + "-I$source_dir" + "-c", $source, "-o", $obj_file
+        $process = Start-Process -FilePath $c_compiler -ArgumentList $buildArgs -NoNewWindow -Wait -PassThru
+        if ($process.ExitCode -ne 0) {
+            Write-Error "Failed to compile $source"
+            exit 1
+        }
+    }
+
+    # Compile C++ files
+    $cpp_flags = @("-std=c++17", "-Wall", "-Wextra", "-O2")
+    foreach ($source in $cpp_sources) {
+        $obj_file = [System.IO.Path]::ChangeExtension($source, ".o")
+        $object_files += $obj_file
+        $source_dir = [System.IO.Path]::GetDirectoryName($source)
+        $buildArgs = $cpp_flags + $includes + "-I$source_dir" + "-c", $source, "-o", $obj_file
+        $process = Start-Process -FilePath $cpp_compiler -ArgumentList $buildArgs -NoNewWindow -Wait -PassThru
+        if ($process.ExitCode -ne 0) {
+            Write-Error "Failed to compile $source"
+            exit 1
+        }
+    }
+
+    # Link object files
+    Write-Host "Linking..."
+    $linkArgs = $object_files + "-o", "docgen.exe"
+    $process = Start-Process -FilePath $cpp_compiler -ArgumentList $linkArgs -NoNewWindow -Wait -PassThru
     
     if ($process.ExitCode -eq 0 -and (Test-Path "docgen.exe")) {
         Move-Item -Path "docgen.exe" -Destination "$InstallDir\docgen.exe" -Force

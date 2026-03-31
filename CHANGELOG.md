@@ -8,6 +8,7 @@ Removed:
 
 Improved/Fixed:
 
+- fixed g++ trying to compile c code
 - fixed installers not working
 - improved polling mechanism for auto mode
 - fixed payload of query not including message
