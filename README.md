@@ -14,10 +14,19 @@
 Docgen automatically keeps your project docs accurate: store intent/spec next to source, run `docgen update` and only changed files get regenerated. Fast, auditable, and works locally with Ollama or in the cloud.
 
 ## Why it matters TO YOU NOW
-Documentation bitrots fast and it is a pain to maintain, you spend all day updating it and after one hour of work the docs are a lie. You don't have to deal with that anymore. Just open a terminal on your repo and run `docgen auto` and docs will update in real time as you work. No smoke, no hacks. 
+Documentation bitrots fast and it is a pain to maintain, you spend all day updating it, and after one hour of work the docs are a lie. You don't have to deal with that anymore. Just open a terminal on your repo and run `docgen auto` and docs will update in real time as you work. No smoke, no hacks. 
 
-## The worklflow
-You already know this workflow, it is easy to grasp.
+
+### Stay in the Flow with `docgen auto`
+
+Context switching kills productivity. You write code, then you have to stop, open a `README.md` or a Confluence page, and manually describe your changes. By the time you're done, you've lost your train of thought.
+
+With `docgen auto`, your documentation evolves *with* your code. No more post-sprint "doc-fixing" days. No more stale `README`s. Just accurate, up-to-date documentation, always.
+
+`docgen auto` solves this. Run it in a terminal and forget about it. As you write code, `docgen` watches for file changes and regenerates the relevant documentation *in the background, in real-time*. Your documentation becomes a direct, effortless artifact of your work, not a separate chore.
+
+## The manual workflow
+Updating manually is not difficult either. You already know this workflow, it is easy to grasp.
 Go to your repo and initialize a project:
 ```bash
 docgen init #This will create a .docgen docs repo and your Docfile
