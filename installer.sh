@@ -81,9 +81,6 @@ build_from_source() {
 
     if [ -f "src/main.cpp" ] && [ -f "Makefile" ]; then
         echo "Local source code detected. Building..."
-        make all
-        mv docgen "$INSTALL_DIR/"
-        echo "docgen successfully built and installed to $INSTALL_DIR/docgen"
     else
         echo "Downloading source code..."
         TMP_DIR=$(mktemp -d)
@@ -91,7 +88,9 @@ build_from_source() {
         curl -fsSL https://github.com/alonsovm44/docgen/archive/refs/heads/master.tar.gz -o source.tar.gz
         tar -xzf source.tar.gz
         cd docgen-master
-        
+    fi
+
+    if [ ! -d "tree-sitter" ]; then
         echo "Downloading tree-sitter dependencies..."
         curl -fsSL https://github.com/tree-sitter/tree-sitter/archive/refs/heads/master.tar.gz | tar -xz && mv tree-sitter-master tree-sitter
         curl -fsSL https://github.com/tree-sitter/tree-sitter-c/archive/refs/heads/master.tar.gz | tar -xz && mv tree-sitter-c-master tree-sitter-c
@@ -101,15 +100,17 @@ build_from_source() {
         curl -fsSL https://github.com/tree-sitter/tree-sitter-typescript/archive/refs/heads/master.tar.gz | tar -xz && mv tree-sitter-typescript-master tree-sitter-typescript
         curl -fsSL https://github.com/tree-sitter/tree-sitter-go/archive/refs/heads/master.tar.gz | tar -xz && mv tree-sitter-go-master tree-sitter-go
         curl -fsSL https://github.com/tree-sitter/tree-sitter-rust/archive/refs/heads/master.tar.gz | tar -xz && mv tree-sitter-rust-master tree-sitter-rust
+    fi
 
-        echo "Building docgen from source..."
-        make all
-        mv docgen "$INSTALL_DIR/"
-        
+    echo "Building docgen from source..."
+    make all
+    mv docgen "$INSTALL_DIR/"
+    
+    if [ -n "$TMP_DIR" ]; then
         cd "$HOME"
         rm -rf "$TMP_DIR"
-        echo "docgen successfully built and installed to $INSTALL_DIR/docgen"
     fi
+    echo "docgen successfully built and installed to $INSTALL_DIR/docgen"
 }
 
 if [[ -n "$DOWNLOAD_URL" ]]; then

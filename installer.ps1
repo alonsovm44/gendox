@@ -62,7 +62,9 @@ function Build-FromSource {
         Invoke-WebRequest -Uri "https://github.com/alonsovm44/docgen/archive/refs/heads/master.zip" -OutFile "source.zip"
         Expand-Archive -Path "source.zip" -DestinationPath "." -Force
         Set-Location "docgen-master"
-        
+    }
+
+    if (-not (Test-Path "tree-sitter")) {
         Write-Host "Downloading tree-sitter dependencies..."
         $repos = @("tree-sitter", "tree-sitter-c", "tree-sitter-cpp", "tree-sitter-python", "tree-sitter-javascript", "tree-sitter-typescript", "tree-sitter-go", "tree-sitter-rust")
         foreach ($repo in $repos) {
