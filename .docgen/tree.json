@@ -11,9 +11,9 @@
                 "ctime"
             ],
             "doc_path": ".docgen/docs/src/core.hpp.md",
-            "hash": "93fdae079a9b70cf",
+            "hash": "4bb4e9391649449c",
             "path": "src/core.hpp",
-            "summary": "The `docgen` tool is a command-line utility designed to automate the generation and maintenance of documentation for software projects. It leverages AI models to create comprehensive Markdown documentation for source code files, tracks changes, and manages project configuration."
+            "summary": "<!-- docgen-provenance"
         },
         {
             "dependencies": [
@@ -77,29 +77,26 @@
                 "Name"
             ],
             "doc_path": ".docgen/docs/src/utils.hpp.md",
-            "hash": "86b8fe8d34bf26b7",
+            "hash": "d7152ec3367b2a13",
             "path": "src/utils.hpp",
-            "summary": "Here’s the updated documentation reflecting the changes in the code while preserving the existing structure and content where possible:"
+            "summary": "<!-- docgen-provenance"
         },
         {
             "dependencies": [],
             "doc_path": ".docgen/docs/installer.ps1.md",
-            "hash": "79500b89a24679f2",
+            "hash": "c3c51d42050c222e",
             "path": "installer.ps1",
-            "summary": "This PowerShell script automates the installation of the `docgen` tool, preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the platform, it falls back to downloading the source code and provides build instructions."
+            "summary": "<!-- docgen-provenance"
         },
         {
             "dependencies": [
-                "sys",
-                "urllib.request",
-                "json",
-                "json"
+                "manager"
             ],
             "doc_path": ".docgen/docs/installer.sh.md",
-            "hash": "686e6e60f0421e4d",
+            "hash": "5dc9b234686af8b1",
             "path": "installer.sh",
-            "summary": "This script automates the installation of the `docgen` tool by preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the detected OS/architecture, it falls back to downloading the source code archive and provides build instructions."
+            "summary": "<!-- docgen-provenance"
         }
     ],
-    "last_update": "2026-03-30T23:01:06Z"
+    "last_update": "2026-03-31T01:16:40Z"
 }

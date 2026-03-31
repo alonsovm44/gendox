@@ -41,10 +41,10 @@ $(TS_OBJ): $(TS_SRC)
 	$(CC) $(CFLAGS) -I$(TS_DIR)/lib/src -c $< -o $@
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -I$(<D) -c $< -o $@
 
 %.o: %.cc
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -I$(<D) -c $< -o $@
 
 clean:
 	rm -f $(DOCGEN_OBJS) $(TS_OBJ) $(LANG_C_OBJS) $(LANG_CXX_OBJS) $(TARGET)

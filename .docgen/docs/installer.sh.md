@@ -1,45 +1,74 @@
 <!-- docgen-provenance
 model_id: qwen2.5-coder:7b
-prompt_hash: 86d4ddc83786bcfa
-timestamp: 2026-03-31T01:12:22Z
+prompt_hash: d697c91082bfd5b1
+timestamp: 2026-03-31T01:16:40Z
 tool_version: docgen v0.2.0
-base_commit: b87be9bfdf443ab7b95aba13ea2bf5b56008783a
+base_commit: cb7729a1dd35c6bf09f3e9153da05bc9f74858f8
 -->
 
 # docgen Build Script Documentation
 
 ## Purpose
-This script automates the installation of the `docgen` tool by preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the detected OS/architecture, it falls back to downloading the source code archive and provides build instructions.
+This script automates the installation of the `docgen` tool by preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the detected OS/architecture, it falls back to downloading and building the source code.  
+The script also ensures core dependencies are installed automatically and optionally installs **Ollama** for local AI processing.
 
 ## Behavior
 
+### Dependency Installation
+- Automatically checks for required tools: `curl`, `tar`, and `grep`.
+- If missing, attempts installation using the system’s available package manager (`apt-get`, `dnf`, `yum`, `pacman`, `zypper`, or `brew`).
+- If no supported package manager is detected, the script exits with an error and instructs the user to install the dependency manually.
+
+### Optional Ollama Installation
+- Detects whether `ollama` is installed.
+- If missing, prompts the user to install it.
+- If accepted, installs Ollama via its official installation script.
+- If declined, installation continues without Ollama.
+
 ### OS/Architecture Detection
 - Detects the operating system and architecture using `uname`.
-- Maps detected values to supported targets (e.g., `linux-x86_64`, `macos-arm64`).
+- Normalizes architecture names to `amd64` or `arm64` for compatibility with release assets.
 
 ### GitHub Release Query
 - Queries the GitHub API for the latest release of the `docgen` repository.
-- Uses `curl`, `wget`, or `python3` to fetch release metadata.
+- Uses `curl` to fetch release metadata.
+- Searches for a prebuilt asset matching the detected OS and architecture.
 
 ### Asset Selection
-- Searches for a prebuilt asset matching the detected OS/architecture.
-- Prefers exact matches (e.g., `docgen-linux-x86_64.tar.gz`) and falls back to shorter matches or any asset containing the OS name.
+- Selects the first matching asset containing both the OS and architecture in its filename.
+- If no matching asset is found, the script falls back to building from source.
 
-### Download and Verification
+### Download and Installation
 1. **Download**:  
-   - Downloads the selected asset using `curl`, `wget`, or `python3`.  
-2. **Checksum Verification**:  
-   - If a checksum asset is available, downloads and verifies the integrity of the downloaded file using `sha256sum` or `shasum`.  
+   - Downloads the selected prebuilt binary directly into the installation directory (`$HOME/.local/bin`).  
 
-### Extraction and Installation
-- Extracts the downloaded archive (supports `.tar.gz` and `.zip`).  
-- Locates the `docgen` binary within the extracted files.  
-- Installs the binary to `/usr/local/bin` or a user-specified directory (`LOCAL_INSTALL`).  
-- Ensures the binary is executable.  
+2. **Installation**:  
+   - Ensures the binary is executable.  
+   - If download fails, automatically falls back to building from source.
 
 ### Fallback to Source Code
-- If no prebuilt asset is found, downloads the source code archive from the latest release or a specified tag.  
-- Provides detailed instructions for building from source, including extraction, CMake, and compilation steps.  
+If no prebuilt binary is available or the download fails, the script:
+
+1. **Checks Build Dependencies**  
+   - Ensures a C++ compiler (`g++` or `clang++`) is available.  
+   - On macOS, instructs the user to install Xcode Command Line Tools if no compiler is found.  
+   - Ensures `make` is installed.  
+   - Installs missing tools when possible.
+
+2. **Local Source Build**  
+   - If `src/main.cpp` and `Makefile` exist in the current directory, builds directly using `make`.  
+   - Installs the resulting binary to `$HOME/.local/bin`.
+
+3. **Remote Source Build**  
+   - Downloads the latest source archive from GitHub.  
+   - Downloads required **tree-sitter** language grammars (C, C++, Python, JavaScript, TypeScript, Go, Rust).  
+   - Builds using `make`.  
+   - Installs the resulting binary to `$HOME/.local/bin`.  
+   - Cleans up temporary build directories.
+
+### PATH Warning
+- After installation, the script checks whether `$HOME/.local/bin` is in the user’s PATH.
+- If not, it prints instructions for adding it to the shell configuration.
 
 ## Usage
 1. **Run the Script**:  
@@ -48,37 +77,37 @@ This script automates the installation of the `docgen` tool by preferring prebui
    ./install.sh
    ```
 
-2. **Custom Installation Directory**:  
-   Override the default installation directory using:  
-   ```bash
-   LOCAL_INSTALL=~/.local/bin ./install.sh
+2. **Installation Directory**:  
+   The script installs to:  
    ```
-
-3. **Specify Release Tag**:  
-   Install from a specific release tag instead of the latest:  
-   ```bash
-   RELEASE_TAG=v1.2.3 ./install.sh
+   ~/.local/bin
    ```
+   This directory is created automatically if missing.
 
-4. **Post-Installation**:  
-   - After successful installation, run the tool using:  
-     ```bash
-     docgen --help
-     ```
+3. **Post-Installation**:  
+   Run the tool using:  
+   ```bash
+   docgen --help
+   ```
 
 ## Error Handling
 - Exits with a non-zero status if:  
-  - No downloader (`curl`, `wget`, or `python3`) is available.  
-  - No prebuilt asset or source code can be downloaded.  
-  - The binary cannot be located in the extracted archive.  
-  - The specified release tag does not exist.  
+  - No supported package manager is found when installing dependencies.  
+  - Required build tools cannot be installed.  
+  - The prebuilt binary cannot be downloaded.  
+  - Source code cannot be downloaded.  
+  - The build process fails.  
 
 ## Dependencies
-- **Downloader**: `curl`, `wget`, or `python3` (required for downloading assets).  
-- **Extraction Tools**: `tar` (for `.tar.gz`), `unzip` (for `.zip`).  
-- **Checksum Verification**: `sha256sum` or `shasum` (optional but recommended).  
+- **Downloader**: `curl` (required).  
+- **Extraction Tools**: `tar`.  
+- **Build Tools** (for source fallback):  
+  - `g++` or `clang++`  
+  - `make`  
+- **tree-sitter grammars**: Automatically downloaded during source build.  
 
 ## Notes
-- The script does not require `git` for installation.  
-- If no prebuilt asset is available for your platform, consider opening an issue in the repository to request support.  
-- Building from source requires `cmake`, `make`, and a C++ toolchain. The script does not automate the build process by default but provides clear instructions.
+- The script uses a Makefile-based build system and no longer relies on CMake.  
+- The script attempts to install missing dependencies automatically when possible.  
+- Ollama installation is optional but recommended for enhanced local AI functionality.  
+- If `$HOME/.local/bin` is not in your PATH, the script provides instructions to add it.

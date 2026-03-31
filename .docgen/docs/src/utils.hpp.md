@@ -1,6 +1,10 @@
-Here’s the updated documentation reflecting the changes in the code while preserving the existing structure and content where possible:
-
----
+<!-- docgen-provenance
+model_id: qwen2.5-coder:7b
+prompt_hash: a39e0b3777177da9
+timestamp: 2026-03-31T01:14:27Z
+tool_version: docgen v0.2.0
+base_commit: b87be9bfdf443ab7b95aba13ea2bf5b56008783a
+-->
 
 # Documentation: Utility Functions for File Processing, Pattern Matching, and Lightweight HTTP Execution
 
@@ -15,6 +19,7 @@ The functions are intentionally simple, stateless, and header‑only, making the
 - [File Inspection](#file-inspection)
 - [File I/O](#file-io)
 - [String Utilities](#string-utilities)
+- [Git Commit Retrieval](#git-commit-retrieval)
 - [HTTP Execution via Curl](#http-execution-via-curl)
 - [Pattern Matching](#pattern-matching)
 - [Include Extraction](#include-extraction)
@@ -103,6 +108,26 @@ Removes leading and trailing whitespace.
 
 ---
 
+## Git Commit Retrieval
+
+### `get_git_commit() -> std::string`
+
+Retrieves the current Git commit hash from the repository.
+
+**Purpose**
+- Provide version information for documentation or build artifacts.
+
+**Behavior**
+- Executes `git rev-parse HEAD` in a cross-platform manner.
+- Returns "unknown" if the command fails or no repository is found.
+- Trims whitespace from the result.
+
+**Platform Notes**
+- Uses `_popen` on Windows and `popen` on other systems.
+- Suppresses errors by redirecting stderr to /dev/null (or equivalent).
+
+---
+
 ## HTTP Execution via Curl
 
 ### `exec_curl(const std::string& url, const std::vector<std::string>& headers, const json& body) -> std::string`
@@ -170,7 +195,8 @@ Extracts import/include statements from source code across multiple languages.
 - C‑family: `import something`
 - C#: `using Namespace;`
 - Python: `from module import ...` and `import module`
-- Java/Go: `package name;`
+- Java: `package name;`
+- Go: `package name`
 
 **Behavior**
 - Uses a single regex capturing multiple language constructs.
@@ -192,6 +218,7 @@ This header provides a compact toolkit for:
 - hashing content,
 - reading/writing files,
 - identifying text files,
+- retrieving Git commit information,
 - executing simple HTTP POST requests,
 - matching file patterns,
 - extracting import/include dependencies.
@@ -199,5 +226,6 @@ This header provides a compact toolkit for:
 Its design favors portability, minimal dependencies, and predictable behavior, making it well‑suited for documentation generators, static analysis tools, and build‑time utilities.
 
 **Updates**
+- Added `get_git_commit` function for retrieving Git commit information.
 - Enhanced `match_pattern` to handle Windows-style path separators.
 - Improved `extract_includes` to support Go-style `package` statements.
