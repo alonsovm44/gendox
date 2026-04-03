@@ -89,7 +89,7 @@ inline std::string get_git_commit() {
 // Execute a shell command and return output. Uses curl for HTTP.
 inline std::string exec_curl(const std::string& url, const std::vector<std::string>& headers, const json& body) {
     // Write body to a temp file to avoid shell escaping hell
-    fs::path temp_file = fs::temp_directory_path() / "docgen_req.json";
+    fs::path temp_file = fs::temp_directory_path() / "gendox_req.json";
     {
         std::ofstream ofs(temp_file);
         ofs << body.dump();

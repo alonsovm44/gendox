@@ -72,7 +72,7 @@ inline std::set<fs::path> scan_files(const DocfileConfig& config) {
             fs::path p = entry.path().lexically_relative(".");
             std::string p_str = p.string();
             
-            if (p_str.find(".docgen") == 0) continue;
+            if (p_str.find(".gendox") == 0) continue;
 
             if (ignore_hidden) {
                 bool hidden = false;
@@ -119,8 +119,8 @@ inline std::set<fs::path> scan_files(const DocfileConfig& config) {
 }
 
 inline void cmd_init() {
-    if (fs::exists(DOCGEN_DIR) || fs::exists(DOCFILE)) {
-        std::cerr << "Error: .docgen/ or Docfile already exists." << std::endl;
+    if (fs::exists(GENDOX_DIR) || fs::exists(DOCFILE)) {
+        std::cerr << "Error: .gendox/ or Docfile already exists." << std::endl;
         return;
     }
 
@@ -135,7 +135,7 @@ inline void cmd_init() {
     docfile.close();
 
     // Create .docgen directory
-    fs::create_directory(DOCGEN_DIR);
+    fs::create_directory(GENDOX_DIR);
     fs::create_directory(DOCS_DIR);
 
     // Create config
@@ -166,7 +166,7 @@ inline void cmd_init() {
     json tree_data;
     tree_data["project_name"] = project_name;
     tree_data["files"] = json::array();
-    std::ofstream tree_file(DOCGEN_DIR + "/tree.json");
+    std::ofstream tree_file(GENDOX_DIR + "/tree.json");
     tree_file << tree_data.dump(4);
     tree_file.close();
 
@@ -175,16 +175,16 @@ inline void cmd_init() {
 
 inline void cmd_config(int argc, char* argv[]) {
     if (argc < 3) {
-        std::cout << "Usage: docgen config <key> <value>\nKeys: mode, protocol, key, model, ignore-hidden" << std::endl;
-        std::cout << "       docgen config see" << std::endl;
-        std::cout << "       docgen config check" << std::endl;
+        std::cout << "Usage: gendox config <key> <value>\nKeys: mode, protocol, key, model, ignore-hidden" << std::endl;
+        std::cout << "       gendox config see" << std::endl;
+        std::cout << "       gendox config check" << std::endl;
         return;
     }
     std::string key = argv[2];
 
     if (key == "see") {
         if (!fs::exists(CONFIG_FILE)) {
-            std::cerr << "Error: Config file not found. Run 'docgen init'." << std::endl;
+            std::cerr << "Error: Config file not found. Run 'gendox init'." << std::endl;
             return;
         }
         std::ifstream i(CONFIG_FILE);
@@ -196,7 +196,7 @@ inline void cmd_config(int argc, char* argv[]) {
 
     if (key == "check") {
         if (!fs::exists(CONFIG_FILE)) {
-            std::cerr << "Error: Config file not found. Run 'docgen init'." << std::endl;
+            std::cerr << "Error: Config file not found. Run 'gendox init'." << std::endl;
             return;
         }
         std::ifstream i(CONFIG_FILE);
@@ -254,13 +254,13 @@ inline void cmd_config(int argc, char* argv[]) {
     }
 
     if (argc < 4) {
-        std::cout << "Usage: docgen config <key> <value>\nKeys: mode, protocol, key, model, ignore-hidden" << std::endl;
+        std::cout << "Usage: gendox config <key> <value>\nKeys: mode, protocol, key, model, ignore-hidden" << std::endl;
         return;
     }
     std::string value = argv[3];
 
     if (!fs::exists(CONFIG_FILE)) {
-        std::cerr << "Error: Config file not found. Run 'docgen init'." << std::endl;
+        std::cerr << "Error: Config file not found. Run 'gendox init'." << std::endl;
         return;
     }
 
@@ -416,7 +416,7 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
     if (fs::exists(dest_path)) {
         existing_doc = read_file(dest_path);
         // Strip existing provenance header so it doesn't get sent to the AI
-        size_t prov_start = existing_doc.find("<!-- docgen-provenance");
+        size_t prov_start = existing_doc.find("<!-- gendox-provenance");
         if (prov_start != std::string::npos) {
             size_t prov_end = existing_doc.find("-->", prov_start);
             if (prov_end != std::string::npos) {
@@ -554,11 +554,11 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
             char time_buf[30];
             std::strftime(time_buf, sizeof(time_buf), "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&now_c));
 
-            std::string provenance = "<!-- docgen-provenance\n";
+            std::string provenance = "<!-- gendox-provenance\n";
             provenance += "model_id: " + active_model_id + "\n";
             provenance += "prompt_hash: " + hash_content(prompt) + "\n";
             provenance += "timestamp: " + std::string(time_buf) + "\n";
-            provenance += "tool_version: docgen v0.2.0\n";
+            provenance += "tool_version: gendox v0.2.0\n";
             provenance += "base_commit: " + get_git_commit() + "\n";
             provenance += "-->\n\n";
 
@@ -587,7 +587,7 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
 
 inline void cmd_update(bool verbose = false, bool auto_mode = false) {
     if (!fs::exists(DOCFILE)) {
-        std::cerr << "Error: Docfile not found. Run 'docgen init'." << std::endl;
+        std::cerr << "Error: Docfile not found. Run 'gendox init'." << std::endl;
         exit(1);
     }
 
@@ -601,7 +601,7 @@ inline void cmd_update(bool verbose = false, bool auto_mode = false) {
 
     // Load tree.json
     json tree_data;
-    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    fs::path tree_path = fs::path(GENDOX_DIR) / "tree.json";
     if (fs::exists(tree_path)) {
         std::ifstream f(tree_path);
         if (f.peek() != std::ifstream::traits_type::eof()) {
@@ -738,7 +738,7 @@ inline void cmd_update(bool verbose = false, bool auto_mode = false) {
 }
 
 inline void cmd_auto() {
-    std::cout << "Docgen Auto-Update Mode" << std::endl;
+    std::cout << "Gendox Auto-Update Mode" << std::endl;
     std::cout << "Watching tracked files for changes... (Ctrl+C to stop)" << std::endl;
     
     std::map<std::string, fs::file_time_type> last_write_times;
@@ -767,9 +767,9 @@ inline void cmd_auto() {
 }
 
 inline void cmd_summary() {
-    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    fs::path tree_path = fs::path(GENDOX_DIR) / "tree.json";
     if (!fs::exists(tree_path)) {
-        std::cerr << "Error: tree.json not found. Run 'docgen update' first." << std::endl;
+        std::cerr << "Error: tree.json not found. Run 'gendox update' first." << std::endl;
         return;
     }
 
@@ -825,7 +825,7 @@ inline void cmd_summary() {
 
 inline void cmd_status() {
     if (!fs::exists(DOCFILE)) {
-        std::cerr << "Error: Docfile not found. Run 'docgen init'." << std::endl;
+        std::cerr << "Error: Docfile not found. Run 'gendox init'." << std::endl;
         return;
     }
 
@@ -866,7 +866,7 @@ inline void cmd_status() {
 
 inline void cmd_clean() {
     if (!fs::exists(DOCFILE)) {
-        std::cerr << "Error: Docfile not found. Run 'docgen init'." << std::endl;
+        std::cerr << "Error: Docfile not found. Run 'gendox init'." << std::endl;
         return;
     }
 
@@ -883,7 +883,7 @@ inline void cmd_clean() {
 
     // Load tree.json
     json tree_data;
-    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    fs::path tree_path = fs::path(GENDOX_DIR) / "tree.json";
     if (fs::exists(tree_path)) {
         std::ifstream f_tree(tree_path);
         if (f_tree.peek() != std::ifstream::traits_type::eof()) {
@@ -946,7 +946,7 @@ inline void cmd_clean() {
 
 inline void cmd_validate() {
     if (!fs::exists(DOCFILE)) {
-        std::cerr << "Error: Docfile not found. Run 'docgen init'." << std::endl;
+        std::cerr << "Error: Docfile not found. Run 'gendox init'." << std::endl;
         exit(1);
     }
 
@@ -988,15 +988,15 @@ inline void cmd_validate() {
     if (valid) {
         std::cout << "Validation successful." << std::endl;
     } else {
-        std::cerr << "Validation failed. Run 'docgen update' to fix." << std::endl;
+        std::cerr << "Validation failed. Run 'gendox update' to fix." << std::endl;
         exit(1);
     }
 }
 
 inline void cmd_graph() {
-    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    fs::path tree_path = fs::path(GENDOX_DIR) / "tree.json";
     if (!fs::exists(tree_path)) {
-        std::cerr << "Error: tree.json not found. Run 'docgen update' first." << std::endl;
+        std::cerr << "Error: tree.json not found. Run 'gendox update' first." << std::endl;
         return;
     }
 
@@ -1036,7 +1036,7 @@ inline void cmd_graph() {
     }
     ss << "}\n";
 
-    fs::path output_path = fs::path(DOCGEN_DIR) / "graph.dot";
+    fs::path output_path = fs::path(GENDOX_DIR) / "graph.dot";
     std::ofstream out(output_path);
     out << ss.str();
     out.close();
@@ -1062,7 +1062,7 @@ inline void cmd_query(const std::string& q) {
     }
 
     if (!fs::exists(CONFIG_FILE)) {
-        std::cerr << "Error: Config file not found. Run 'docgen init'." << std::endl;
+        std::cerr << "Error: Config file not found. Run 'gendox init'." << std::endl;
         return;
     }
     
@@ -1070,9 +1070,9 @@ inline void cmd_query(const std::string& q) {
     json config;
     i >> config;
 
-    fs::path tree_path = fs::path(DOCGEN_DIR) / "tree.json";
+    fs::path tree_path = fs::path(GENDOX_DIR) / "tree.json";
     if (!fs::exists(tree_path)) {
-        std::cerr << "Error: tree.json not found. Run 'docgen update' first." << std::endl;
+        std::cerr << "Error: tree.json not found. Run 'gendox update' first." << std::endl;
         return;
     }
     std::ifstream f(tree_path);
@@ -1103,7 +1103,7 @@ inline void cmd_query(const std::string& q) {
     }
 
     if (context.empty()) {
-        std::cout << "No documentation found. Run 'docgen update' to generate docs." << std::endl;
+        std::cout << "No documentation found. Run 'gendox update' to generate docs." << std::endl;
         return;
     }
 
@@ -1137,7 +1137,7 @@ inline void cmd_query(const std::string& q) {
 
     while (true) {
         if (chat_mode && question.empty()) {
-            std::cout << "\n(docgen) > ";
+            std::cout << "\n(gendox) > ";
             std::getline(std::cin, question);
             question = trim(question);
             if (question == "exit" || question == "quit") {
@@ -1210,20 +1210,20 @@ inline void cmd_upgrade() {
     std::cout << "Checking for updates..." << std::endl;
 #ifdef _WIN32
     // Execute the PowerShell update script from the master branch
-    int result = system("powershell -Command \"irm https://raw.githubusercontent.com/alonsovm44/docgen/master/update.ps1 | iex\"");
+    int result = system("powershell -Command \"irm https://raw.githubusercontent.com/alonsovm44/gendox/master/update.ps1 | iex\"");
 #else
     // Execute the Bash update script from the master branch
-    int result = system("curl -fsSL https://raw.githubusercontent.com/alonsovm44/docgen/master/update.sh | bash");
+    int result = system("curl -fsSL https://raw.githubusercontent.com/alonsovm44/gendox/master/update.sh | bash");
 #endif
     if (result != 0) std::cerr << "Upgrade failed." << std::endl;
 }
 
 inline void cmd_reboot() {
-    std::cout << "This will delete " << DOCFILE << " and " << DOCGEN_DIR << "/. Are you sure? (y/n): ";
+    std::cout << "This will delete " << DOCFILE << " and " << GENDOX_DIR << "/. Are you sure? (y/n): ";
     char c;
     std::cin >> c;
     if (c == 'y' || c == 'Y') {
-        fs::remove_all(DOCGEN_DIR);
+        fs::remove_all(GENDOX_DIR);
         fs::remove(DOCFILE);
         std::cout << "Reboot complete." << std::endl;
     } else {

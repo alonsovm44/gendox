@@ -3,7 +3,7 @@
 const std::string VERSION = "0.2.2";
 
 void print_help() {
-    std::cout << "Usage: docgen <command> [args...]\n\n"
+    std::cout << "Usage: gendox <command> [args...]\n\n"
               << "Commands:\n"
               << "  init       Initialize a new documentation project\n"
               << "  config     Manage configuration (AI mode, keys, models)\n"
@@ -17,8 +17,8 @@ void print_help() {
               << "  graph      Generate dependency graph (DOT format)\n"
               << "  query      Ask a question about the codebase\n"
               << "  summary    Generate a summary of the documentation status\n"
-              << "  upgrade    Upgrade docgen to the latest version\n"
-              << "  reboot     Reset the documentation repository (deletes .docgen/)\n"
+              << "  upgrade    Upgrade gendox to the latest version\n"
+              << "  reboot     Reset the documentation repository (deletes .gendox/)\n"
               << "  sponsor    Open the GitHub Sponsors page\n"
               << "  get-key    Open browser to get a free API key\n"
               << "  version    Display the current version\n"
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
         print_help();
         return 0;
     } else if (command == "version" || command == "-version" || command == "--version") {
-        std::cout << "docgen version " << VERSION << std::endl;
+        std::cout << "gendox version " << VERSION << std::endl;
         return 0;
     } else if (command == "init") {
         cmd_init();
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
         system("xdg-open https://apifreellm.com");
 #endif
     } else {
-        std::cout << "Unknown command: " << command << "\nRun 'docgen help' for usage." << std::endl;
+        std::cout << "Unknown command: " << command << "\nRun 'gendox help' for usage." << std::endl;
         return 1;
     }
 
