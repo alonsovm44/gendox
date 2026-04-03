@@ -1,11 +1,3 @@
-<!-- docgen-provenance
-model_id: qwen2.5-coder:7b
-prompt_hash: cb130ad6c8ae454b
-timestamp: 2026-03-31T01:15:15Z
-tool_version: docgen v0.2.0
-base_commit: cb7729a1dd35c6bf09f3e9153da05bc9f74858f8
--->
-
 # docgen Setup Script Documentation
 
 ## Purpose
@@ -30,7 +22,7 @@ Run the script in a PowerShell environment. It handles the following tasks:
 
 ### Installation
 - **Prebuilt Asset**: If a prebuilt asset is found, it is downloaded and placed directly into the installation directory (`$InstallDir`).
-- **Source Code Fallback**: If no prebuilt asset is available, the script attempts to build `docgen` from source. It checks for required build tools (`g++`, `clang++`, and `make`), downloads the source code and necessary dependencies, compiles the project, and installs the executable.
+- **Source Code Fallback**: If no prebuilt asset is available, the script attempts to build `docgen` from source. It checks for required build tools (`gcc`, `g++`, `clang`, `clang++`, and `make`), downloads the source code and necessary dependencies, compiles the project, and installs the executable.
 
 ### Installation Directory
 - The installation directory defaults to `%USERPROFILE%\.local\bin` but can be customized via the `$InstallDir` variable.
@@ -48,7 +40,7 @@ Run the script in a PowerShell environment. It handles the following tasks:
 ## Requirements
 - PowerShell 5.1 or later.
 - Internet connection (for downloading assets, source code, and Ollama installer).
-- C++ compiler (`g++` or `clang++`) and `make` utility for building from source (if fallback is required).
+- C/C++ compilers (`gcc`, `g++`, `clang`, or `clang++`) and `make` utility for building from source (if fallback is required).
 
 ## Notes
 - The script cleans up temporary directories after completion.
@@ -63,6 +55,14 @@ Run the script in a PowerShell environment. It handles the following tasks:
 ## Changes from Previous Version
 - Added prompt to install Ollama if not found.
 - Updated installation directory default to `%USERPROFILE%\.local\bin`.
-- Enhanced source build process to include downloading and building tree-sitter dependencies.
+- Enhanced source build process to include both C and C++ compilers, and added support for tree-sitter language parsers.
 - Simplified prebuilt asset installation process.
 - Improved error handling and user feedback during the installation process.
+
+**Updated Code Changes:**
+
+- The script now checks for both C (`gcc` or `clang`) and C++ (`g++` or `clang++`) compilers during the source build process.
+- Added support for compiling tree-sitter language parsers (C, C++, Python, JavaScript, TypeScript, Go, Rust) along with the main `docgen` source code.
+- Improved compiler flag handling, including separate flags for C and C++ compilation.
+- The build process now explicitly compiles both C and C++ source files, ensuring all dependencies are built correctly.
+- Enhanced error checking during compilation and linking to provide more detailed feedback.

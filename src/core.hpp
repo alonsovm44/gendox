@@ -6,6 +6,7 @@
 #include <chrono>
 #include <map>
 #include <ctime>
+#include <tree_sitter/api.h>
 
 using IncludeCache = std::map<std::string, std::string>;
 
@@ -14,6 +15,112 @@ struct DocfileConfig {
     std::vector<std::string> ignores;
     std::vector<std::string> styles;
 };
+
+extern "C" {
+    const TSLanguage* tree_sitter_c();
+    const TSLanguage* tree_sitter_cpp();
+    const TSLanguage* tree_sitter_python();
+    const TSLanguage* tree_sitter_javascript();
+    const TSLanguage* tree_sitter_typescript();
+    const TSLanguage* tree_sitter_go();
+    const TSLanguage* tree_sitter_rust();
+}
+
+inline std::string skeletonize(const std::string& source_code, const std::string& ext) {
+    const TSLanguage* lang = nullptr;
+    const char* query_str = nullptr;
+    std::string replacement_text = "{ /* implementation hidden */ }";
+
+    if (ext == ".c" || ext == ".h") {
+        lang = tree_sitter_c();
+        query_str = "(function_definition body: (compound_statement) @body)";
+    } else if (ext == ".cpp" || ext == ".hpp" || ext == ".cc" || ext == ".hh" || ext == ".cxx") {
+        lang = tree_sitter_cpp();
+        query_str = "(function_definition body: (compound_statement) @body)";
+    } else if (ext == ".py") {
+        lang = tree_sitter_python();
+        query_str = "(function_definition body: (block) @body)";
+        replacement_text = ":\n    # implementation hidden\n    pass";
+    } else if (ext == ".js" || ext == ".jsx") {
+        lang = tree_sitter_javascript();
+        query_str = "(function_declaration body: (statement_block) @body) (method_definition body: (statement_block) @body) (arrow_function body: (statement_block) @body)";
+    } else if (ext == ".ts" || ext == ".tsx") {
+        lang = tree_sitter_typescript();
+        query_str = "(function_declaration body: (statement_block) @body) (method_definition body: (statement_block) @body) (arrow_function body: (statement_block) @body)";
+    } else if (ext == ".go") {
+        lang = tree_sitter_go();
+        query_str = "(function_declaration body: (block) @body) (method_declaration body: (block) @body)";
+    } else if (ext == ".rs") {
+        lang = tree_sitter_rust();
+        query_str = "(function_item body: (block) @body)";
+    } else {
+        return source_code; // Unsupported language, return as is
+    }
+
+    TSParser* parser = ts_parser_new();
+    ts_parser_set_language(parser, lang);
+
+    TSTree* tree = ts_parser_parse_string(parser, NULL, source_code.c_str(), source_code.length());
+    if (!tree) {
+        ts_parser_delete(parser);
+        return source_code;
+    }
+
+    TSNode root_node = ts_tree_root_node(tree);
+
+    uint32_t error_offset;
+    TSQueryError error_type;
+    TSQuery* query = ts_query_new(lang, query_str, strlen(query_str), &error_offset, &error_type);
+    
+    if (!query) {
+        ts_tree_delete(tree);
+        ts_parser_delete(parser);
+        return source_code;
+    }
+
+    TSQueryCursor* cursor = ts_query_cursor_new();
+    ts_query_cursor_exec(cursor, query, root_node);
+
+    TSQueryMatch match;
+    struct Replacement { uint32_t start; uint32_t end; };
+    std::vector<Replacement> replacements;
+
+    while (ts_query_cursor_next_match(cursor, &match)) {
+        for (uint16_t i = 0; i < match.capture_count; ++i) {
+            TSNode body_node = match.captures[i].node;
+            replacements.push_back({ts_node_start_byte(body_node), ts_node_end_byte(body_node)});
+        }
+    }
+
+    // 1. Sort ascending by start byte (if tied, longest segment comes first to act as the outermost block)
+    std::sort(replacements.begin(), replacements.end(), [](const Replacement& a, const Replacement& b) {
+        if (a.start != b.start) return a.start < b.start;
+        return a.end > b.end;
+    });
+
+    // 2. Filter out nested/overlapping segments (we only want to strip the outermost body)
+    std::vector<Replacement> filtered;
+    for (const auto& rep : replacements) {
+        if (!filtered.empty() && rep.start < filtered.back().end) {
+            continue; 
+        }
+        filtered.push_back(rep);
+    }
+
+    // 3. Apply right-to-left. This requires NO offset tracking because modifying 
+    //    the string backwards does not affect the byte positions of preceding elements!
+    std::string skeleton = source_code;
+    for (auto it = filtered.rbegin(); it != filtered.rend(); ++it) {
+        skeleton.replace(it->start, it->end - it->start, replacement_text);
+    }
+
+    ts_query_cursor_delete(cursor);
+    ts_query_delete(query);
+    ts_tree_delete(tree);
+    ts_parser_delete(parser);
+
+    return skeleton;
+}
 
 inline DocfileConfig parse_docfile() {
     DocfileConfig config;
@@ -106,9 +213,9 @@ inline std::set<fs::path> scan_files(const DocfileConfig& config) {
 
             if (!is_text_file(p)) continue;
 
-            // Mitigate prompt fatigue: skip extremely large files
-            // 50KB is roughly ~12k-15k tokens.
-            if (fs::file_size(p) > 50000) {
+            // Skip extremely large files
+            // Increased to 500KB since AST skeletonization avoids prompt fatigue
+            if (fs::file_size(p) > 500000) {
                 continue;
             }
 
@@ -675,8 +782,12 @@ inline void cmd_update(bool verbose = false, bool auto_mode = false) {
         std::cout << "[" << (i + 1) << "/" << total_tasks << "] Updating: " << task.path_str << eta_msg << std::endl;
         
         std::string content = read_file(task.path);
+
+        std::string ext = task.path.extension().string();
+        std::string processed_content = skeletonize(content, ext);
+
         std::string doc_content;
-        if (call_ai(task.path_str, content, cache, config.styles, doc_content, verbose)) {
+        if (call_ai(task.path_str, processed_content, cache, config.styles, doc_content, verbose)) {
             lock_map[task.path_str] = task.hash;
 
             // Update tree.json entry
@@ -1237,6 +1348,14 @@ inline void cmd_sponsor() {
     system("start https://github.com/sponsors/alonsovm44");
 #elif __APPLE__
     system("open https://github.com/sponsors/alonsovm44");
+#else
+    system("xdg-open https://github.com/sponsors/alonsovm44");
+#endif
+}   system("open https://github.com/sponsors/alonsovm44");
+#else
+    system("xdg-open https://github.com/sponsors/alonsovm44");
+#endif
+}   system("open https://github.com/sponsors/alonsovm44");
 #else
     system("xdg-open https://github.com/sponsors/alonsovm44");
 #endif

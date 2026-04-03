@@ -1,11 +1,3 @@
-<!-- docgen-provenance
-model_id: qwen2.5-coder:7b
-prompt_hash: d697c91082bfd5b1
-timestamp: 2026-03-31T01:16:40Z
-tool_version: docgen v0.2.0
-base_commit: cb7729a1dd35c6bf09f3e9153da05bc9f74858f8
--->
-
 # docgen Build Script Documentation
 
 ## Purpose
@@ -107,7 +99,7 @@ If no prebuilt binary is available or the download fails, the script:
 - **tree-sitter grammars**: Automatically downloaded during source build.  
 
 ## Notes
-- The script uses a Makefile-based build system and no longer relies on CMake.  
+- The script uses a Makefile-based build system.  
 - The script attempts to install missing dependencies automatically when possible.  
 - Ollama installation is optional but recommended for enhanced local AI functionality.  
 - If `$HOME/.local/bin` is not in your PATH, the script provides instructions to add it.

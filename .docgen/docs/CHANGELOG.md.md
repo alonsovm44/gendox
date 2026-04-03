@@ -1,7 +1,3 @@
-Here is the updated documentation, modified **only where the new code introduces changes**. The structure and unchanged content remain intact.
-
----
-
 # Project Changelog Documentation
 
 This document outlines the intent and functional impact of the changes introduced in versions **v0.0.1 (2026‑03‑06)** and **v0.2.0 (2026‑03‑07)**. It is designed to help maintainers and contributors understand why each change matters, how it affects the workflow, and what behaviors to expect from the updated system.
@@ -54,15 +50,19 @@ The update introduces **incremental rewriting**, allowing the system to modify o
 An issue that prevented the model key from being recognized has been resolved.  
 The fix ensures that authentication and model selection behave consistently across environments.
 
-### Installer Stability (v0.0.1 & v0.2.0)
+### Installer Stability (v0.0.1 & v0.2.0)  
 **v0.0.1**: The Windows installer previously stalled when initializing Ollama.  
 **v0.2.0**: General installer issues have been addressed, ensuring all installers work reliably across platforms.
 
-### Polling Mechanism for Auto Mode (v0.2.0)
+### Compiler Fix (v0.2.0)  
+A bug causing `g++` to incorrectly compile C code has been fixed.  
+This ensures proper compilation behavior for C files, preventing build errors.
+
+### Polling Mechanism for Auto Mode (v0.2.0)  
 The polling mechanism in **auto mode** has been improved for better efficiency and reliability.  
 This enhancement ensures smoother operation and reduces latency during automated tasks.
 
-### Query Payload Fix (v0.2.0)
+### Query Payload Fix (v0.2.0)  
 A bug where the query payload did not include the message has been fixed.  
 This ensures that queries are processed correctly, improving the accuracy and relevance of responses.
 

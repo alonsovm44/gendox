@@ -1,7 +1,7 @@
 {
-    "CHANGELOG.md": "d59f2bbd311d7882",
-    "installer.ps1": "c3c51d42050c222e",
-    "installer.sh": "5dc9b234686af8b1",
+    "CHANGELOG.md": "e8488687c65bf8a6",
+    "installer.ps1": "90a523d0051a6d41",
+    "installer.sh": "3055925064cb426c",
     "src/constants.hpp": "c0eb1895e649bf8a",
     "src/core.hpp": "4bb4e9391649449c",
     "src/main.cpp": "c4bd5355f0df5d2d",

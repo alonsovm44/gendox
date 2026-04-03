@@ -27,9 +27,9 @@
         {
             "dependencies": [],
             "doc_path": ".docgen/docs/CHANGELOG.md.md",
-            "hash": "d59f2bbd311d7882",
+            "hash": "e8488687c65bf8a6",
             "path": "CHANGELOG.md",
-            "summary": "Here is the updated documentation, modified **only where the new code introduces changes**. The structure and unchanged content remain intact."
+            "summary": "This document outlines the intent and functional impact of the changes introduced in versions **v0.0.1 (2026‑03‑06)** and **v0.2.0 (2026‑03‑07)**. It is designed to help maintainers and contributors understand why each change matters, how it affects the workflow, and what behaviors to expect from the updated system."
         },
         {
             "dependencies": [
@@ -84,19 +84,19 @@
         {
             "dependencies": [],
             "doc_path": ".docgen/docs/installer.ps1.md",
-            "hash": "c3c51d42050c222e",
+            "hash": "90a523d0051a6d41",
             "path": "installer.ps1",
-            "summary": "<!-- docgen-provenance"
+            "summary": "This PowerShell script automates the installation of the `docgen` tool, preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the platform, it falls back to downloading the source code and provides build instructions. Additionally, the script offers to install Ollama if it is not already installed, as it is highly recommended for local AI processing."
         },
         {
             "dependencies": [
                 "manager"
             ],
             "doc_path": ".docgen/docs/installer.sh.md",
-            "hash": "5dc9b234686af8b1",
+            "hash": "3055925064cb426c",
             "path": "installer.sh",
-            "summary": "<!-- docgen-provenance"
+            "summary": "This script automates the installation of the `docgen` tool by preferring prebuilt release assets from GitHub Releases. If no prebuilt asset is available for the detected OS/architecture, it falls back to downloading and building the source code."
         }
     ],
-    "last_update": "2026-03-31T01:16:40Z"
+    "last_update": "2026-03-31T03:06:17Z"
 }
