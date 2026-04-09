@@ -1350,13 +1350,14 @@ inline void cmd_sponsor() {
     system("open https://github.com/sponsors/alonsovm44");
 #else
     system("xdg-open https://github.com/sponsors/alonsovm44");
-#endif
-}   system("open https://github.com/sponsors/alonsovm44");
-#else
+    #endif
+    #else
     system("xdg-open https://github.com/sponsors/alonsovm44");
-#endif
-}   system("open https://github.com/sponsors/alonsovm44");
-#else
+    #endif
+    system("open https://github.com/sponsors/alonsovm44");
+    #else
     system("xdg-open https://github.com/sponsors/alonsovm44");
-#endif
-}
+    #endif
+    system("open https://github.com/sponsors/alonsovm44");
+}   
+
