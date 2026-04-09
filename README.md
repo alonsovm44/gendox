@@ -45,8 +45,6 @@ For windows
 irm https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.ps1 | iex
 ```
 
-> piping install script is safe, you can inspect it if you desire.
-
 ## Interactive chat
 Good for onboarding.
 ```bash
@@ -62,10 +60,8 @@ This launches a terminal chat where the AI answers questions about the documente
 - Docs-as-Code: generated Markdown lives next to source, tracked in `.docgen/`.
 - Incremental builds: file-level hashing avoids re-generating unchanged docs.
 - Context-aware (RAG): dependency analysis provides the LLM with the right context for complex APIs.
-- Local-first: Ollama support by default; cloud backends optionally supported.
-- Single static binary: zero runtime dependencies required.
 
-## Docfile — example (store the blueprint for Docgen)
+## Docfile — example (store the blueprint for Gendox)
 ```Docfile
 Track:
     main.cpp

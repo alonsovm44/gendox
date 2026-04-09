@@ -4,8 +4,13 @@ services:
     volumes:
       - .:/src
     environment:
-      - OLLAMA_HOST=http://ollama:11434
-    depends_on:
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://ollama:11434}
+      - GENDOX_MODE=${GENDOX_MODE:-local}
+      - GENDOX_PROTOCOL=${GENDOX_PROTOCOL}
+      - GENDOX_KEY=${GENDOX_KEY}
+      - GENDOX_MODEL=${GENDOX_MODEL}
+    # Ollama only needs to start if we are in local mode
+    depends_on: 
       - ollama
 
   ollama:

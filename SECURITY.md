@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Currently, only the latest release of `docgen` is supported with security updates. 
+Currently, only the latest release of `Gendox` is supported with security updates. 
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -11,7 +11,7 @@ Currently, only the latest release of `docgen` is supported with security update
 
 ## Reporting a Vulnerability
 
-We take the security of `docgen` seriously. If you discover a security vulnerability, please follow these steps:
+We take the security of `Gendox` seriously. If you discover a security vulnerability, please follow these steps:
 
 1. **Do not** open a public issue on GitHub.
 2. Please report the vulnerability privately via the GitHub Security Advisories feature on this repository.
