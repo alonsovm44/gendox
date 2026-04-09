@@ -1,6 +1,6 @@
-# Docgen — End documentation drift for good
+# Gendox — End documentation drift for good
 
-[![Release](https://img.shields.io/github/v/release/alonsovm44/docgen?color=blue&style=flat-square)](https://github.com/alonsovm44/docgen/releases)
+[![Release](https://img.shields.io/github/v/release/alonsovm44/gendox?color=blue&style=flat-square)](https://github.com/alonsovm44/gendox/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![C++17](https://img.shields.io/badge/C++-17-00599C?logo=c%2B%2B&logoColor=white&style=flat-square)]()
 [![Local AI: Ollama](https://img.shields.io/badge/Local_AI-Ollama-black?logo=ollama&style=flat-square)]()
@@ -9,24 +9,24 @@
 
 | Basic Workflow | Interactive Chat | Auto-Update |
 |:---:|:---:|:---:|
-| ![Docgen Demo](assets/demo.gif) | ![Docgen Chat Demo](assets/querydemo.gif) | ![Docgen Auto Demo](assets/auto.gif) |
+| ![Gendox Demo](assets/demo.gif) | ![Gendox Chat Demo](assets/querydemo.gif) | ![Gendox Auto Demo](assets/auto.gif) |
 
-## Why Docgen matters TO YOU NOW
+## Why Gendox matters TO YOU NOW
 **The problem:** Documentation rots fast and it is a pain to maintain. You spend all the afternoon updating it, and after one hour of work the docs are de facto a lie. Context switching kills productivity. You write code, then you have to stop, open a `README.md` or a Confluence page, and manually describe your changes. By the time you're done, you've lost your train of thought.
 
-**The solution:** Open your favorite shell, and run `docgen auto`, your documentation evolves *with* your code. No more post-sprint "doc-fixing" days. No more stale `README`s. Just accurate, up-to-date documentation, always.
+**The solution:** Open your favorite shell, and run `gendox auto`, your documentation evolves *with* your code. No more post-sprint "doc-fixing" days. No more stale `README`s. Just accurate, up-to-date documentation, always.
 
-As you write code, `docgen` watches for file changes and regenerates the relevant documentation *in the background, in real-time*. Your documentation becomes a direct, effortless artifact of your work, not a separate chore.
+As you write code, `gendox` watches for file changes and regenerates the relevant documentation *in the background, in real-time*. Your documentation becomes a direct, effortless artifact of your work, not a separate chore.
 
 ## The manual workflow
 Updating manually is not difficult either. You already know this workflow, it is easy to grasp.
 Go to your repo and initialize a project:
 ```bash
-docgen init #This will create a .docgen docs repo and your Docfile
-docgen config see # config file of your project, you only do this once.
-docgen track main.cpp src/ libs/ utils.hpp ... # add the files or directories you want to track
-docgen ignore vars.env node_modules/ __pycache__ # add files and directories you want to ignore
-docgen update # this updates tracked files
+gendox init #This will create a .gendox docs repo and your Docfile
+gendox config see # config file of your project, you only do this once.
+gendox track main.cpp src/ libs/ utils.hpp ... # add the files or directories you want to track
+gendox ignore vars.env node_modules/ __pycache__ # add files and directories you want to ignore
+gendox update # this updates tracked files
 ```
 That's it. Docs are updated.
 

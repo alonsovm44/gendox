@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "Starting docgen installation..."
+echo "Starting gendox installation..."
 
 # Function to install missing packages
 install_pkg() {
@@ -56,8 +56,8 @@ ARCH="$(uname -m)"
 if [[ "$ARCH" == "x86_64" ]]; then ARCH="amd64"; fi
 if [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then ARCH="arm64"; fi
 
-echo "Fetching latest release information for docgen..."
-LATEST_RELEASE_URL="https://api.github.com/repos/alonsovm44/docgen/releases/latest"
+echo "Fetching latest release information for gendox..."
+LATEST_RELEASE_URL="https://api.github.com/repos/alonsovm44/gendox/releases/latest"
 DOWNLOAD_URL=$(curl -s "$LATEST_RELEASE_URL" | grep "browser_download_url" | grep "$OS" | grep "$ARCH" | cut -d '"' -f 4 | head -n 1)
 
 build_from_source() {
@@ -85,9 +85,9 @@ build_from_source() {
         echo "Downloading source code..."
         TMP_DIR=$(mktemp -d)
         cd "$TMP_DIR"
-        curl -fsSL https://github.com/alonsovm44/docgen/archive/refs/heads/master.tar.gz -o source.tar.gz
+        curl -fsSL https://github.com/alonsovm44/gendox/archive/refs/heads/master.tar.gz -o source.tar.gz
         tar -xzf source.tar.gz
-        cd docgen-master
+        cd gendox-master
     fi
 
     if [ ! -d "tree-sitter" ]; then
@@ -102,23 +102,23 @@ build_from_source() {
         curl -fsSL https://github.com/tree-sitter/tree-sitter-rust/archive/refs/heads/master.tar.gz | tar -xz && mv tree-sitter-rust-master tree-sitter-rust
     fi
 
-    echo "Building docgen from source..."
+    echo "Building gendox from source..."
     make clean
     make all
-    mv docgen "$INSTALL_DIR/"
+    mv gendox "$INSTALL_DIR/"
     
     if [ -n "$TMP_DIR" ]; then
         cd "$HOME"
         rm -rf "$TMP_DIR"
     fi
-    echo "docgen successfully built and installed to $INSTALL_DIR/docgen"
+    echo "gendox successfully built and installed to $INSTALL_DIR/gendox"
 }
 
 if [[ -n "$DOWNLOAD_URL" ]]; then
     echo "Downloading pre-built binary for $OS-$ARCH..."
-    if curl -fsSL -o "$INSTALL_DIR/docgen" "$DOWNLOAD_URL"; then
-        chmod +x "$INSTALL_DIR/docgen"
-        echo "docgen successfully installed to $INSTALL_DIR/docgen"
+    if curl -fsSL -o "$INSTALL_DIR/gendox" "$DOWNLOAD_URL"; then
+        chmod +x "$INSTALL_DIR/gendox"
+        echo "gendox successfully installed to $INSTALL_DIR/gendox"
     else
         echo "Failed to download pre-built binary. Falling back to source build..."
         build_from_source
@@ -137,4 +137,4 @@ if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
     echo "=================================================="
 fi
 
-echo "Setup complete! Run 'docgen' to get started."
+echo "Setup complete! Run 'gendox' to get started."

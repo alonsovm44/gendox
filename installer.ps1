@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
-Write-Host "Starting docgen installation..."
-
+Write-Host "Starting gendox installation..."
+  
 # Ask to install Ollama if not found
 if (-not (Get-Command "ollama" -ErrorAction SilentlyContinue)) {
     Write-Host "Ollama is not installed. It is highly recommended for local AI processing."
@@ -26,8 +26,8 @@ if (-not (Test-Path $InstallDir)) {
 $OS = "windows"
 $Arch = if ($env:PROCESSOR_ARCHITECTURE -match "AMD64|IA64") { "amd64" } elseif ($env:PROCESSOR_ARCHITECTURE -match "ARM64") { "arm64" } else { "x86" }
 
-Write-Host "Fetching latest release information for docgen..."
-$ReleaseUrl = "https://api.github.com/repos/alonsovm44/docgen/releases/latest"
+Write-Host "Fetching latest release information for gendox..."
+$ReleaseUrl = "https://api.github.com/repos/alonsovm44/gendox/releases/latest"
 try {
     $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
     $Asset = $ReleaseData.assets | Where-Object { $_.name -match $OS -and $_.name -match $Arch } | Select-Object -First 1
@@ -63,9 +63,9 @@ function Build-FromSource {
         New-Item -ItemType Directory -Path $TmpDir | Out-Null
         Set-Location $TmpDir
 
-        Invoke-WebRequest -Uri "https://github.com/alonsovm44/docgen/archive/refs/heads/master.zip" -OutFile "source.zip"
+        Invoke-WebRequest -Uri "https://github.com/alonsovm44/gendox/archive/refs/heads/master.zip" -OutFile "source.zip"
         Expand-Archive -Path "source.zip" -DestinationPath "." -Force
-        Set-Location "docgen-master"
+        Set-Location "gendox-master"
     }
 
     if (-not (Test-Path "tree-sitter")) {
@@ -78,7 +78,7 @@ function Build-FromSource {
         }
     }
 
-    Write-Host "Compiling docgen and all tree-sitter languages..."
+    Write-Host "Compiling gendox and all tree-sitter languages..."
     $includes = @("-I.", "-Itree-sitter/lib/include")
     $c_sources = @("tree-sitter/lib/src/lib.c")
     $cpp_sources = @("src/main.cpp")
@@ -127,12 +127,12 @@ function Build-FromSource {
 
     # Link object files
     Write-Host "Linking..."
-    $linkArgs = $object_files + "-o", "docgen.exe"
+    $linkArgs = $object_files + "-o", "gendox.exe"
     $process = Start-Process -FilePath $cpp_compiler -ArgumentList $linkArgs -NoNewWindow -Wait -PassThru
     
-    if ($process.ExitCode -eq 0 -and (Test-Path "docgen.exe")) {
-        Move-Item -Path "docgen.exe" -Destination "$InstallDir\docgen.exe" -Force
-        Write-Host "docgen successfully built and installed to $InstallDir\docgen.exe"
+    if ($process.ExitCode -eq 0 -and (Test-Path "gendox.exe")) {
+        Move-Item -Path "gendox.exe" -Destination "$InstallDir\gendox.exe" -Force
+        Write-Host "gendox successfully built and installed to $InstallDir\gendox.exe"
     } else {
         Write-Error "Build failed."
         exit 1
@@ -147,8 +147,8 @@ function Build-FromSource {
 if ($DownloadUrl) {
     Write-Host "Downloading pre-built binary for $OS-$Arch..."
     try {
-        Invoke-WebRequest -Uri $DownloadUrl -OutFile "$InstallDir\docgen.exe"
-        Write-Host "docgen successfully installed to $InstallDir\docgen.exe"
+        Invoke-WebRequest -Uri $DownloadUrl -OutFile "$InstallDir\gendox.exe"
+        Write-Host "gendox successfully installed to $InstallDir\gendox.exe"
     } catch {
         Write-Host "Failed to download pre-built binary. Falling back to source build..."
         Build-FromSource
@@ -168,4 +168,4 @@ if ($currentPath -notmatch [regex]::Escape($InstallDir)) {
     Write-Host "==================================================" -ForegroundColor Yellow
 }
 
-Write-Host "Setup complete! Run 'docgen' to get started." -ForegroundColor Green
+Write-Host "Setup complete! Run 'gendox' to get started." -ForegroundColor Green

@@ -46,13 +46,13 @@ int main(int argc, char* argv[]) {
         cmd_config(argc, argv);
     } else if (command == "track") {
         if (argc < 3) {
-            std::cout << "Usage: docgen track <path>" << std::endl;
+            std::cout << "Usage: gendox track <path>" << std::endl;
             return 1;
         }
         cmd_track_ignore("track", argv[2]);
     } else if (command == "ignore") {
         if (argc < 3) {
-            std::cout << "Usage: docgen ignore <path>" << std::endl;
+            std::cout << "Usage: gendox ignore <path>" << std::endl;
             return 1;
         }
         cmd_track_ignore("ignore", argv[2]);
@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
         cmd_graph();
     } else if (command == "query") {
         if (argc < 3) {
-            std::cout << "Usage: docgen query \"<question>\"" << std::endl;
+            std::cout << "Usage: gendox query \"<question>\"" << std::endl;
             return 1;
         }
         cmd_query(argv[2]);

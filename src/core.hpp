@@ -241,7 +241,7 @@ inline void cmd_init() {
     docfile << "Track:\n    # Example: *.cpp\n\nIgnore:\n    # Example: secret.cpp\n\nStyle:\n    # Example: no emojis\n    # Example: be concise\n";
     docfile.close();
 
-    // Create .docgen directory
+    // Create .gendox directory
     fs::create_directory(GENDOX_DIR);
     fs::create_directory(DOCS_DIR);
 
@@ -608,7 +608,7 @@ inline bool call_ai(const std::string& filepath, const std::string& content, Inc
                 } else {
                     error_msg = "AI Error: " + response_str;
                     if (response.contains("code") && response["code"] == 401) {
-                        error_msg += "\nHint: Use 'docgen config key <your_api_key>' to set your API key.";
+                        error_msg += "\nHint: Use 'gendox config key <your_api_key>' to set your API key.";
                     }
                     if ((response.contains("code") && response["code"] == 429) || 
                         (response.contains("error") && response["error"].contains("code") && 

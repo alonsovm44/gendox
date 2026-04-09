@@ -3,7 +3,7 @@
 Added:
 
 - added query command
-- added graph mode to docgen
+- added graph mode to gendox
 Removed:
 
 Improved/Fixed:
