@@ -1,0 +1,17 @@
+services:
+  gendox:
+    build: .
+    volumes:
+      - .:/src
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:

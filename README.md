@@ -10,30 +10,27 @@
 | Basic Workflow | Interactive Chat | Auto-Update |
 |:---:|:---:|:---:|
 | ![Gendox Demo](assets/demo.gif) | ![Gendox Chat Demo](assets/querydemo.gif) | ![Gendox Auto Demo](assets/auto.gif) |
+## Why Gendox matters to YOU NOW.
 
-## Why Gendox matters TO YOU NOW
-**The problem:** Documentation rots fast and it is a pain to maintain. You spend all the afternoon updating it, and after one hour of work the docs are de facto a lie. Context switching kills productivity. You write code, then you have to stop, open a `README.md` or a Confluence page, and manually describe your changes. By the time you're done, you've lost your train of thought.
-
-**The solution:** Open your favorite shell, and run `gendox auto`, your documentation evolves *with* your code. No more post-sprint "doc-fixing" days. No more stale `README`s. Just accurate, up-to-date documentation, always.
-
-As you write code, `gendox` watches for file changes and regenerates the relevant documentation *in the background, in real-time*. Your documentation becomes a direct, effortless artifact of your work, not a separate chore.
-
-## The manual workflow
-Updating manually is not difficult either. You already know this workflow, it is easy to grasp.
-Go to your repo and initialize a project:
-```bash
-gendox init #This will create a .gendox docs repo and your Docfile
-gendox config see # config file of your project, you only do this once.
-gendox track main.cpp src/ libs/ utils.hpp ... # add the files or directories you want to track
-gendox ignore vars.env node_modules/ __pycache__ # add files and directories you want to ignore
-gendox update # this updates tracked files
-```
-That's it. Docs are updated.
+Docs rot fast, and updating them manually kills focus.  
+Run `gendox auto` — your documentation evolves with your code in real time, always accurate, never stale.
 
 ## Try it now (safe copy-paste)
 > Note: I get that you may be uncomfortable with piping unknown remote scripts into a shell, you can audit the installer `installer.sh/.ps1` yourself and see it is safe. Otherwise you can use `shellcheck installer.sh`.
 
-- Quick (recommended):
+## Try Gendox in 1 Minute (Instant Onboarding)
+
+### 1️⃣ Docker (Recommended)
+No installation required — just clone and run:
+
+```bash
+git clone https://github.com/alonsovm44/gendox.git
+cd gendox
+docker compose up -d                 # Builds Gendox + Ollama
+docker compose run gendox init       # Initialize project
+docker compose run gendox update     # Generate docs
+```
+## Quick Install (recommended):
 
 **Linux / macOS:**
 Download installer, inspect, run:
@@ -47,6 +44,8 @@ For windows
 #download and install
 irm https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.ps1 | iex
 ```
+
+> piping install script is safe, you can inspect it if you desire.
 
 ## Interactive chat
 Good for onboarding.
@@ -82,47 +81,47 @@ Style:
 
 ## Common commands (copy-paste)
 - Initialize project:
-  `docgen init`
+  `gendox init`
 
 - Watch for changes, update docs in real time as you work:
- ` docgen auto`
+ ` gendox auto`
 
 - Query the AI bout the codebase, good for onboarding
-`docgen query "query string"`
+`gendox query "query string"`
 
 - Track files/directories:
-  `docgen track <path>`
+  `gendox track <path>`
 
 - Update docs (generate):
-  `docgen update`
+  `gendox update`
 
 - Check status (like Git status):
-  `docgen status`
+  `gendox status`
 
 - Generate project summary:
- ` docgen summary`
+ ` gendox summary`
 
 - Dependency graph (DOT):
-  `docgen graph`
+  `gendox graph`
 
 - Verify docs are up-to-date (use in CI):
-  `docgen validate`
+  `gendox validate`
 
 - Clean deleted/untracked docs:
-  `docgen clean`
+  `gendox clean`
 
 - Reset docgen repo (asks confirmation):
-  `docgen reboot`
+  `gendox reboot`
 
 ## Config & connection
-Run `docgen config` to manage the backend and model:
+Run `gendox config` to manage the backend and model:
 ```bash
-docgen config mode local    # default (Ollama)
-docgen config model qwen2.5-coder:7b
-docgen config mode cloud
-docgen config protocol openai
-docgen config key <YOUR_API_KEY>
-docgen config check           # verify connection
+gendox config mode local    # default (Ollama)
+gendox config model qwen2.5-coder:7b
+gendox config mode cloud
+gendox config protocol openai
+gendox config key <YOUR_API_KEY>
+gendox config check           # verify connection
 ```
 
 Configuration keys quick reference
@@ -136,11 +135,11 @@ Configuration keys quick reference
 
 
 ## FAQ (short)
-Q: Is Docgen rewriting my code?  
-A: No. Docgen reads source and generates Markdown docs. It never mutates your source files unless you explicitly run commands that write generated artifacts.
+Q: Is gendox rewriting my code?  
+A: No. gendox reads source and generates Markdown docs. It never mutates your source files unless you explicitly run commands that write generated artifacts.
 
 Q: Is it deterministic?  
-A: Docgen hashes context and caches outputs. Determinism depends on model behavior. For full reproducibility, pin model + prompt versions and use the cache/artifact files. Docgen reuses docs so they are not rewritten from scratch everytime a tracked file is modified. It is incremental.
+A: gendox hashes context and caches outputs. Determinism depends on model behavior. For full reproducibility, pin model + prompt versions and use the cache/artifact files. gendox reuses docs so they are not rewritten from scratch everytime a tracked file is modified. It is incremental.
 
 ## Contributing & support
 - Please open issues for bugs/feature requests and PRs for examples and docs. See CONTRIBUTING.md and SECURITY.md for reporting sensitive issues.
