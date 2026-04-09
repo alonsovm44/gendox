@@ -36,7 +36,7 @@ docker compose run gendox update     # Generate docs
 Download installer, inspect, run:
 ```bash
 # Download
-curl -fsSL https://raw.githubusercontent.com/alonsovm44/docgen/master/installer.sh| bash
+curl -fsSL https://raw.githubusercontent.com/alonsovm44/gendox/master/installer.sh | bash
 
 ```
 For windows

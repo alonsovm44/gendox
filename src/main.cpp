@@ -2,6 +2,16 @@
 
 const std::string VERSION = "0.2.2";
 
+void open_url(const std::string& url) {
+#ifdef _WIN32
+    system(("start " + url).c_str());
+#elif __APPLE__
+    system(("open " + url).c_str());
+#else
+    system(("xdg-open " + url).c_str());
+#endif
+}
+
 void print_help() {
     std::cout << "Usage: gendox <command> [args...]\n\n"
               << "Commands:\n"
@@ -85,16 +95,9 @@ int main(int argc, char* argv[]) {
     } else if (command == "reboot") {
         cmd_reboot();
     } else if (command == "sponsor") {
-        cmd_sponsor();
+        open_url("https://github.com/sponsors/alonsovm44");
     } else if (command == "get-key") {
-        // Simple placeholder for opening browser
-#ifdef _WIN32
-        system("start https://apifreellm.com");
-#elif __APPLE__
-        system("open https://apifreellm.com");
-#else
-        system("xdg-open https://apifreellm.com");
-#endif
+        open_url("https://apifreellm.com");
     } else {
         std::cout << "Unknown command: " << command << "\nRun 'gendox help' for usage." << std::endl;
         return 1;
